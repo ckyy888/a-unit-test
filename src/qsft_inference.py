@@ -28,9 +28,17 @@ class QSFTInference:
         
         # Load behavior policy model (π_φ)
         behavior_model_path = os.path.join(model_path, 'behavior_model')
+        behavior_ref_path = os.path.join(model_path, 'behavior_model_path.txt')
+        
         if os.path.exists(behavior_model_path):
             print(f"Loading behavior policy from {behavior_model_path}...")
             self.behavior_model = GPT2LMHeadModel.from_pretrained(behavior_model_path)
+        elif os.path.exists(behavior_ref_path):
+            # Read the reference file to get the actual behavior model path
+            with open(behavior_ref_path, 'r') as f:
+                actual_behavior_path = f.read().strip()
+            print(f"Loading behavior policy from reference: {actual_behavior_path}...")
+            self.behavior_model = GPT2LMHeadModel.from_pretrained(actual_behavior_path)
         else:
             print(f"Loading behavior policy from {model_path}...")
             self.behavior_model = GPT2LMHeadModel.from_pretrained(model_path)
@@ -51,6 +59,19 @@ class QSFTInference:
         self.q_model.eval()
         
         print(f"Models loaded on {self.device}")
+
+    def get_model_info(self) -> Dict[str, Any]:
+        """Get information about the loaded models."""
+        return {
+            'model_path': self.model_path,
+            'device': str(self.device),
+            'beta': self.beta,
+            'gamma': getattr(self, 'gamma', 0.99),
+            'tokenizer_vocab_size': len(self.tokenizer),
+            'behavior_model_params': sum(p.numel() for p in self.behavior_model.parameters()),
+            'q_model_params': sum(p.numel() for p in self.q_model.parameters()),
+            'same_models': self.behavior_model is self.q_model
+        }
     
     def get_next_token_probabilities(self, input_text: str) -> Tuple[torch.Tensor, torch.Tensor]:
         inputs = self.tokenizer(

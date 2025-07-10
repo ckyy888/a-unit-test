@@ -541,7 +541,7 @@ def evaluate_model(args) -> bool:
     if args.eval_checkpoint:
         checkpoint_path = args.eval_checkpoint
     else:
-        checkpoint_path = os.path.join(args.model_output_dir, "checkpoint-final", "q_model")
+        checkpoint_path = os.path.join(args.model_output_dir, "checkpoint-final")
     
     if not os.path.exists(checkpoint_path):
         logger.error(f"Checkpoint not found at {checkpoint_path}")
