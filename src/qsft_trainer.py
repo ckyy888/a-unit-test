@@ -387,22 +387,27 @@ class QSFTTrainer:
         checkpoint_dir = os.path.join(output_dir, f"checkpoint-{step}")
         os.makedirs(checkpoint_dir, exist_ok=True)
         
-        self.behavior_model.save_pretrained(os.path.join(checkpoint_dir, "behavior_model"))
+        # Only save the Q-value model during training
         self.q_model.save_pretrained(os.path.join(checkpoint_dir, "q_model"))
-        self.target_q_model.save_pretrained(os.path.join(checkpoint_dir, "target_q_model"))
         self.tokenizer.save_pretrained(checkpoint_dir)
         
+        # Save behavior model reference (not the full model)
+        behavior_path = os.path.join(output_dir, "behavior_only")
+        if os.path.exists(behavior_path):
+            with open(os.path.join(checkpoint_dir, "behavior_model_path.txt"), 'w') as f:
+                f.write(behavior_path)
+        
+        # Save config to reconstruct target model
         config = {
             'gamma': self.gamma,
             'beta': self.beta,
             'target_update_rate': self.target_update_rate,
-            'model_name': self.model_name
+            'model_name': self.model_name,
+            'reconstruct_target': True  # Flag to rebuild target from q_model
         }
         
         with open(os.path.join(checkpoint_dir, 'qsft_config.json'), 'w') as f:
             json.dump(config, f, indent=2)
-        
-        logger.info(f"Saved checkpoint to {checkpoint_dir}")
     
     def evaluate(self, dataloader: DataLoader) -> Dict[str, float]:
         self.q_model.eval()

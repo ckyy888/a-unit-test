@@ -445,6 +445,7 @@ def train_model(dataset_path: str, args) -> bool:
         return False
 
 def load_checkpoint(trainer: QSFTTrainer, checkpoint_path: str) -> bool:
+    """Load models from a checkpoint with efficient reconstruction."""
     if not os.path.exists(checkpoint_path):
         logger.error(f"Checkpoint path does not exist: {checkpoint_path}")
         return False
@@ -452,37 +453,9 @@ def load_checkpoint(trainer: QSFTTrainer, checkpoint_path: str) -> bool:
     try:
         success_count = 0
         
-        behavior_path = os.path.join(checkpoint_path, "behavior_model")
-        if os.path.exists(behavior_path):
-            from transformers import GPT2LMHeadModel
-            trainer.behavior_model = GPT2LMHeadModel.from_pretrained(behavior_path)
-            trainer.behavior_model.to(trainer.device)
-            logger.info("Loaded behavior model from checkpoint")
-            success_count += 1
-        else:
-            logger.warning("Behavior model not found in checkpoint")
-        
-        q_model_path = os.path.join(checkpoint_path, "q_model")
-        if os.path.exists(q_model_path):
-            from transformers import GPT2LMHeadModel
-            trainer.q_model = GPT2LMHeadModel.from_pretrained(q_model_path)
-            trainer.q_model.to(trainer.device)
-            logger.info("Loaded Q-value model from checkpoint")
-            success_count += 1
-        else:
-            logger.warning("Q-value model not found in checkpoint")
-        
-        target_path = os.path.join(checkpoint_path, "target_q_model")
-        if os.path.exists(target_path):
-            from transformers import GPT2LMHeadModel
-            trainer.target_q_model = GPT2LMHeadModel.from_pretrained(target_path)
-            trainer.target_q_model.to(trainer.device)
-            logger.info("Loaded target Q-value model from checkpoint")
-            success_count += 1
-        else:
-            logger.warning("Target Q-value model not found in checkpoint")
-        
+        # Load configuration first
         config_path = os.path.join(checkpoint_path, "qsft_config.json")
+        config = {}
         if os.path.exists(config_path):
             with open(config_path, 'r') as f:
                 config = json.load(f)
@@ -491,8 +464,61 @@ def load_checkpoint(trainer: QSFTTrainer, checkpoint_path: str) -> bool:
                 trainer.target_update_rate = config.get('target_update_rate', trainer.target_update_rate)
             logger.info("Loaded training configuration from checkpoint")
             success_count += 1
+        
+        # Load behavior model (check for reference first)
+        behavior_ref_path = os.path.join(checkpoint_path, "behavior_model_path.txt")
+        if os.path.exists(behavior_ref_path):
+            # Load from reference path
+            with open(behavior_ref_path, 'r') as f:
+                behavior_path = f.read().strip()
+            if os.path.exists(behavior_path):
+                from transformers import GPT2LMHeadModel
+                trainer.behavior_model = GPT2LMHeadModel.from_pretrained(behavior_path)
+                trainer.behavior_model.to(trainer.device)
+                logger.info(f"Loaded behavior model from reference: {behavior_path}")
+                success_count += 1
         else:
-            logger.warning("Configuration not found in checkpoint")
+            # Fallback: load from checkpoint directly
+            behavior_path = os.path.join(checkpoint_path, "behavior_model")
+            if os.path.exists(behavior_path):
+                from transformers import GPT2LMHeadModel
+                trainer.behavior_model = GPT2LMHeadModel.from_pretrained(behavior_path)
+                trainer.behavior_model.to(trainer.device)
+                logger.info("Loaded behavior model from checkpoint")
+                success_count += 1
+        
+        # Load Q-value model
+        q_model_path = os.path.join(checkpoint_path, "q_model")
+        if os.path.exists(q_model_path):
+            from transformers import GPT2LMHeadModel
+            trainer.q_model = GPT2LMHeadModel.from_pretrained(q_model_path)
+            trainer.q_model.to(trainer.device)
+            logger.info("Loaded Q-value model from checkpoint")
+            success_count += 1
+            
+            # 🔄 RECONSTRUCTION LOGIC HERE
+            if config.get('reconstruct_target', False):
+                # Reconstruct target model from Q-value model
+                import copy
+                trainer.target_q_model = copy.deepcopy(trainer.q_model)
+                trainer.target_q_model.to(trainer.device)
+                logger.info("Reconstructed target Q-value model from Q-value model")
+                success_count += 1
+            else:
+                # Try to load target model directly (old checkpoint format)
+                target_path = os.path.join(checkpoint_path, "target_q_model")
+                if os.path.exists(target_path):
+                    trainer.target_q_model = GPT2LMHeadModel.from_pretrained(target_path)
+                    trainer.target_q_model.to(trainer.device)
+                    logger.info("Loaded target Q-value model from checkpoint")
+                    success_count += 1
+                else:
+                    # Fallback: reconstruct anyway
+                    import copy
+                    trainer.target_q_model = copy.deepcopy(trainer.q_model)
+                    trainer.target_q_model.to(trainer.device)
+                    logger.info("Target model not found, reconstructed from Q-value model")
+                    success_count += 1
         
         if success_count == 0:
             logger.error("No components successfully loaded from checkpoint")
