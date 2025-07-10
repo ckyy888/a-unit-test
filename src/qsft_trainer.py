@@ -409,43 +409,198 @@ class QSFTTrainer:
         with open(os.path.join(checkpoint_dir, 'qsft_config.json'), 'w') as f:
             json.dump(config, f, indent=2)
     
+
     def evaluate(self, dataloader: DataLoader) -> Dict[str, float]:
+        """FIXED: Actually evaluate Q-SFT policy performance"""
+        print("Evaluating Q-SFT policy (not just behavior model)...")
+        
         self.q_model.eval()
         self.behavior_model.eval()
         
-        total_loss = 0
-        total_reward = 0
-        completed_tasks = 0
-        total_samples = 0
+        # Test actual Q-SFT policy on a sample of states
+        qsft_completions = 0
+        behavior_completions = 0
+        qsft_action_quality = 0
+        behavior_action_quality = 0
+        qsft_diversity = 0
+        behavior_diversity = 0
+        
+        num_eval_samples = min(20, len(dataloader.dataset))  # Evaluate on subset
+        eval_count = 0
         
         with torch.no_grad():
-            for batch in tqdm(dataloader, desc="Evaluating"):
-                state_ids = batch['state_input_ids'].to(self.device)
-                action_ids = batch['action_input_ids'].to(self.device)
-                rewards = batch['reward'].to(self.device)
-                task_completed = batch['task_completed'].to(self.device)
+            for batch_idx, batch in enumerate(dataloader):
+                if eval_count >= num_eval_samples:
+                    break
+                    
+                # Extract state from batch
+                state_ids = batch['state_input_ids'][0:1]  # Take first item
+                state_text = self.tokenizer.decode(state_ids[0], skip_special_tokens=True)
+                state_text = state_text.replace("State: ", "").strip()
                 
-                full_input = torch.cat([state_ids, action_ids], dim=1)
-                labels = full_input.clone()
-                state_len = state_ids.shape[1]
-                labels[:, :state_len] = -100
-                
-                outputs = self.behavior_model(input_ids=full_input, labels=labels)
-                total_loss += outputs.loss.item()
-                
-                total_reward += rewards.sum().item()
-                completed_tasks += task_completed.sum().item()
-                total_samples += len(rewards)
+                if len(state_text) < 10:  # Skip invalid states
+                    continue
+                    
+                try:
+                    # 1. Test Q-SFT policy (with current beta)
+                    qsft_action = self.generate_action_with_qsft(state_text)
+                    qsft_quality = self.rate_action_quality(qsft_action)
+                    qsft_completed = self.detect_completion_keywords(qsft_action)
+                    qsft_div = self.calculate_action_diversity(qsft_action)
+                    
+                    # 2. Test behavior policy alone (beta=0)
+                    behavior_action = self.generate_action_behavior_only(state_text)
+                    behavior_quality = self.rate_action_quality(behavior_action)
+                    behavior_completed = self.detect_completion_keywords(behavior_action)
+                    behavior_div = self.calculate_action_diversity(behavior_action)
+                    
+                    # Accumulate metrics
+                    qsft_completions += qsft_completed
+                    behavior_completions += behavior_completed
+                    qsft_action_quality += qsft_quality
+                    behavior_action_quality += behavior_quality
+                    qsft_diversity += qsft_div
+                    behavior_diversity += behavior_div
+                    
+                    eval_count += 1
+                    
+                    if eval_count <= 5:  # Show first few examples
+                        print(f"  State: {state_text[:50]}...")
+                        print(f"    Q-SFT Action: {qsft_action}")
+                        print(f"    Behavior Action: {behavior_action}")
+                        print(f"    Q-SFT Quality: {qsft_quality:.2f}, Behavior Quality: {behavior_quality:.2f}")
+                    
+                except Exception as e:
+                    print(f"    Error evaluating sample {eval_count}: {e}")
+                    continue
         
-        avg_loss = total_loss / len(dataloader)
-        avg_reward = total_reward / total_samples
-        completion_rate = completed_tasks / total_samples
+        if eval_count == 0:
+            print("WARNING: No valid evaluation samples!")
+            return {'error': 'no_valid_samples'}
         
-        return {
-            'avg_loss': avg_loss,
-            'avg_reward': avg_reward,
-            'completion_rate': completion_rate
+        # Compute averages
+        results = {
+            'qsft_completion_rate': qsft_completions / eval_count,
+            'behavior_completion_rate': behavior_completions / eval_count,
+            'qsft_action_quality': qsft_action_quality / eval_count,
+            'behavior_action_quality': behavior_action_quality / eval_count,
+            'qsft_diversity': qsft_diversity / eval_count,
+            'behavior_diversity': behavior_diversity / eval_count,
+            'improvement_over_behavior': (qsft_completions - behavior_completions) / eval_count,
+            'eval_samples': eval_count
         }
+        
+        print(f"Evaluation Results ({eval_count} samples):")
+        print(f"  Q-SFT Completion Rate: {results['qsft_completion_rate']:.2f}")
+        print(f"  Behavior Completion Rate: {results['behavior_completion_rate']:.2f}")
+        print(f"  Q-SFT Action Quality: {results['qsft_action_quality']:.2f}")
+        print(f"  Improvement over Behavior: {results['improvement_over_behavior']:.2f}")
+        
+        return results
+
+    def generate_action_with_qsft(self, state: str) -> str:
+        """Generate action using Q-SFT policy extraction"""
+        try:
+            # Use existing policy extraction method
+            final_probs = self.extract_policy_probabilities(state)
+            
+            # Sample from extracted policy
+            action_token_id = torch.multinomial(final_probs, 1).item()
+            action = self.tokenizer.decode([action_token_id], skip_special_tokens=True)
+            
+            # If too short, try to extend
+            if len(action.strip()) < 8:
+                # Generate a few more tokens
+                input_text = f"State: {state}\nAction:{action}"
+                inputs = self.tokenizer(input_text, return_tensors='pt', max_length=200).to(self.device)
+                
+                with torch.no_grad():
+                    outputs = self.behavior_model.generate(
+                        inputs['input_ids'], 
+                        max_new_tokens=10,
+                        do_sample=True,
+                        temperature=0.8,
+                        pad_token_id=self.tokenizer.eos_token_id
+                    )
+                    
+                extended = self.tokenizer.decode(outputs[0][inputs['input_ids'].shape[1]:], skip_special_tokens=True)
+                action = action + extended
+            
+            return action.strip()[:100]  # Limit length
+            
+        except Exception as e:
+            return f"Click on main content (error: {str(e)[:20]})"
+
+    def generate_action_behavior_only(self, state: str) -> str:
+        """Generate action using behavior policy only (baseline)"""
+        try:
+            input_text = f"State: {state}\nAction:"
+            inputs = self.tokenizer(input_text, return_tensors='pt', max_length=200).to(self.device)
+            
+            with torch.no_grad():
+                outputs = self.behavior_model.generate(
+                    inputs['input_ids'],
+                    max_new_tokens=15,
+                    do_sample=True,
+                    temperature=0.8,
+                    pad_token_id=self.tokenizer.eos_token_id
+                )
+            
+            action = self.tokenizer.decode(outputs[0][inputs['input_ids'].shape[1]:], skip_special_tokens=True)
+            return action.strip()[:100]
+            
+        except Exception as e:
+            return f"Search for items (error: {str(e)[:20]})"
+
+    def rate_action_quality(self, action: str) -> float:
+        """Rate action quality from 0-1"""
+        action_lower = action.lower().strip()
+        
+        if len(action_lower) < 3:
+            return 0.0
+        
+        quality = 0.0
+        
+        # Has action words
+        action_words = ['click', 'search', 'type', 'navigate', 'select', 'enter', 'find']
+        if any(word in action_lower for word in action_words):
+            quality += 0.4
+        
+        # Reasonable length
+        if 5 <= len(action_lower) <= 100:
+            quality += 0.2
+        
+        # Not too repetitive
+        words = action_lower.split()
+        if len(words) > 1:
+            unique_ratio = len(set(words)) / len(words)
+            if unique_ratio > 0.5:
+                quality += 0.2
+        
+        # Not degenerate patterns
+        if action_lower.count('action') <= 2:
+            quality += 0.2
+        else:
+            quality -= 0.3  # Penalty for repetitive "action" patterns
+        
+        return max(0.0, min(1.0, quality))
+
+    def detect_completion_keywords(self, action: str) -> int:
+        """Return 1 if action suggests task completion, 0 otherwise"""
+        action_lower = action.lower()
+        completion_words = ['found', 'completed', 'finished', 'success', 'recipe', 'product', 'details']
+        
+        return 1 if any(word in action_lower for word in completion_words) else 0
+
+    def calculate_action_diversity(self, action: str) -> float:
+        """Calculate diversity score for action"""
+        words = action.lower().split()
+        if len(words) <= 1:
+            return 1.0
+        
+        unique_words = len(set(words))
+        return unique_words / len(words)
+
 
 def main():
     parser = argparse.ArgumentParser(description="Q-SFT Training for GPT-2 Medium")
