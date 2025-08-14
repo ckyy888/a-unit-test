@@ -1,0 +1,453 @@
+{
+  "test_configuration": {
+    "max_steps": 3,
+    "timeout_seconds": 30,
+    "screenshot_enabled": true,
+    "detailed_logging": true
+  },
+  "date_picker_elements": {
+    "check_in": {
+      "selectors": [
+        "[data-testid='checkin-date']",
+        "[aria-label*='Check-in']",
+        "input[placeholder*='Check-in']",
+        ".checkin-date",
+        "#checkin_date",
+        "[name='checkin']",
+        "[id*='checkin']"
+      ],
+      "coordinates": {
+        "x": 0.3,
+        "y": 0.4
+      },
+      "description": "Check-in date picker input"
+    },
+    "check_out": {
+      "selectors": [
+        "[data-testid='checkout-date']",
+        "[aria-label*='Check-out']",
+        "input[placeholder*='Check-out']",
+        ".checkout-date",
+        "#checkout_date",
+        "[name='checkout']",
+        "[id*='checkout']"
+      ],
+      "coordinates": {
+        "x": 0.7,
+        "y": 0.4
+      },
+      "description": "Check-out date picker input"
+    }
+  },
+  "validation_rules": {
+    "both_dates_required": true,
+    "check_in_before_check_out": true,
+    "no_past_dates": true,
+    "max_booking_window_days": 365,
+    "min_stay_duration_days": 1,
+    "max_stay_duration_days": 30
+  },
+  "browser_settings": {
+    "backend_url": "http://localhost:8000",
+    "screenshot_frequency": "per_action",
+    "wait_for_load": true,
+    "network_idle_timeout": 2000
+  },
+  "test_urls": {
+    "google_flights": "https://www.google.com/travel/flights?tfs=CBwQARocagwIAhIIL20vMGQ2bHByDAgDEggvbS8wNGpwbBocagwIAxIIL20vMDRqcGwyDAgCEggvbS8wZDZscEABSAFwAYIBCwj___________8BmAEB&tfu=KgIIAw",
+    "booking_com": "https://www.booking.com",
+    "expedia": "https://www.expedia.com",
+    "google_maps_error": "PLACEHOLDER_GOOGLE_MAPS_ROUTE_ERROR_URL",
+    "espn_nba_scoreboard": "PLACEHOLDER_ESPN_NBA_SCOREBOARD_URL",
+    "booking_property_page": "PLACEHOLDER_BOOKING_HOTEL_ROOM_CAPACITY_URL",
+    "amazon_product_variants": "PLACEHOLDER_AMAZON_LAPTOP_VARIANTS_URL",
+    "wolframalpha_query_error": "PLACEHOLDER_WOLFRAM_EQUATION_ERROR_URL",
+    "bbc_article_pagination": "PLACEHOLDER_BBC_MULTIPAGE_ARTICLE_URL",
+    "gmaps_cafe_search": "PLACEHOLDER_GMAPS_CAFE_CLUSTER_URL",
+    "allrecipes_search": "PLACEHOLDER_ALLRECIPES_CHICKEN_URL",
+    "cambridge_dictionary": "PLACEHOLDER_CAMBRIDGE_PRONUNCIATION_URL",
+    "espn_timezone_games": "PLACEHOLDER_ESPN_TIMEZONE_GAMES_URL",
+    "huggingface_models": "PLACEHOLDER_HUGGINGFACE_BERT_COMPARISON_URL",
+    "booking_map_view": "PLACEHOLDER_BOOKING_MAP_SEARCH_URL",
+    "amazon_reviews": "PLACEHOLDER_AMAZON_PRODUCT_REVIEWS_URL",
+    "wolframalpha_celsius": "PLACEHOLDER_WOLFRAM_TEMPERATURE_URL",
+    "bbc_video_article": "PLACEHOLDER_BBC_VIDEO_ARTICLE_URL",
+    "gmaps_route_options": "PLACEHOLDER_GMAPS_DIRECTIONS_URL",
+    "espn_player_stats": "PLACEHOLDER_ESPN_PLAYER_PAGE_URL"
+  },
+  "gmaps_navigation_elements": {
+    "route_error_panel": {
+      "selectors": [
+        "[data-testid='route-error-panel']",
+        ".directions-error",
+        "[class*='route-not-found']",
+        ".no-route-message",
+        "[aria-label*='Route not found']"
+      ],
+      "description": "Route not found error panel"
+    },
+    "back_button": {
+      "action_type": "BROWSER_BACK",
+      "description": "Browser back navigation"
+    },
+    "results_list": {
+      "selectors": [
+        "[data-testid='search-results']",
+        ".search-results-list",
+        "[role='list']",
+        ".results-container"
+      ],
+      "description": "Search results list"
+    }
+  },
+  "espn_scoreboard_elements": {
+    "games_tab": {
+      "selectors": [
+        "[data-testid='games-tab']",
+        "button[aria-label*='Games']",
+        ".tab-games",
+        "[role='tab'][aria-selected='true']"
+      ],
+      "description": "Games tab (default active)"
+    },
+    "highlights_tab": {
+      "selectors": [
+        "[data-testid='highlights-tab']",
+        "button[aria-label*='Highlights']",
+        ".tab-highlights",
+        "a[href*='highlights']",
+        "[role='tab']:not([aria-selected='true'])"
+      ],
+      "coordinates": {
+        "x": 0.6,
+        "y": 0.2
+      },
+      "description": "Highlights tab to click"
+    }
+  },
+  "booking_room_capacity_elements": {
+    "adult_decrement": {
+      "selectors": [
+        "[data-testid='occupancy-adults-decrease']",
+        "button[aria-label*='Decrease adults']",
+        ".adults-minus-btn",
+        "[id*='adults-minus']"
+      ],
+      "coordinates": {"x": 0.25, "y": 0.5},
+      "description": "Adult count decrement button"
+    },
+    "capacity_warning": {
+      "selectors": [
+        ".capacity-warning",
+        "[data-testid='room-capacity-error']",
+        ".occupancy-error",
+        "[role='alert']"
+      ],
+      "description": "Room capacity warning text"
+    }
+  },
+  "amazon_variant_elements": {
+    "size_13_inch": {
+      "selectors": [
+        "[data-asin-size='13']",
+        "button[aria-label*='13 inch']",
+        ".size-option[data-value='13']",
+        "[data-testid='size-13-inch']"
+      ],
+      "coordinates": {"x": 0.3, "y": 0.6},
+      "description": "13 inch size option"
+    },
+    "available_color": {
+      "selectors": [
+        ".color-swatch:not(.unavailable)",
+        "[data-color-available='true']",
+        "button[data-testid*='color']:not([disabled])"
+      ],
+      "coordinates": {"x": 0.4, "y": 0.7},
+      "description": "Available color option"
+    },
+    "add_to_cart": {
+      "selectors": [
+        "#add-to-cart-button",
+        "[data-testid='add-to-cart']",
+        "input[name='submit.add-to-cart']"
+      ],
+      "description": "Add to cart button"
+    }
+  },
+  "wolframalpha_elements": {
+    "query_box": {
+      "selectors": [
+        "#input",
+        "[data-testid='query-input']",
+        ".query-field",
+        "input[type='text'][placeholder*='query']"
+      ],
+      "coordinates": {"x": 0.5, "y": 0.2},
+      "description": "Query input box"
+    },
+    "result_area": {
+      "selectors": [
+        "#results",
+        ".result-pod",
+        "[data-testid='result-container']"
+      ],
+      "description": "Mathematical result display area"
+    }
+  },
+  "bbc_article_elements": {
+    "next_page": {
+      "selectors": [
+        ".pagination-next",
+        "[data-testid='next-page']",
+        "a[aria-label*='next page']",
+        ".page-nav-next"
+      ],
+      "coordinates": {"x": 0.8, "y": 0.9},
+      "description": "Next page button"
+    },
+    "article_content": {
+      "selectors": [
+        ".article-body",
+        "[data-testid='article-content']",
+        ".story-content"
+      ],
+      "description": "Article content area"
+    }
+  },
+  "gmaps_zoom_elements": {
+    "zoom_in": {
+      "selectors": [
+        "[data-value='+1']",
+        ".zoom-in-btn",
+        "button[aria-label*='Zoom in']"
+      ],
+      "coordinates": {"x": 0.95, "y": 0.3},
+      "description": "Zoom in control"
+    },
+    "cafe_marker": {
+      "selectors": [
+        "[data-marker-type='cafe']",
+        ".place-marker",
+        "[role='button'][aria-label*='coffee']"
+      ],
+      "coordinates": {"x": 0.6, "y": 0.5},
+      "description": "Individual café marker"
+    }
+  },
+  "allrecipes_elements": {
+    "sort_dropdown": {
+      "selectors": [
+        ".sort-dropdown",
+        "[data-testid='sort-select']",
+        "select[name='sort']"
+      ],
+      "coordinates": {"x": 0.8, "y": 0.2},
+      "description": "Sort by dropdown"
+    },
+    "rating_option": {
+      "selectors": [
+        "option[value='rating']",
+        "[data-sort-value='rating']"
+      ],
+      "description": "Sort by rating option"
+    },
+    "time_filter": {
+      "selectors": [
+        "[data-filter='time-30']",
+        "input[value='30min']",
+        ".filter-time-30"
+      ],
+      "coordinates": {"x": 0.1, "y": 0.4},
+      "description": "Under 30 min filter"
+    }
+  },
+  "cambridge_elements": {
+    "us_pronunciation": {
+      "selectors": [
+        ".us-pronunciation",
+        "[data-region='us'] .audio-play",
+        "button[aria-label*='US pronunciation']"
+      ],
+      "coordinates": {"x": 0.3, "y": 0.6},
+      "description": "US pronunciation button"
+    },
+    "uk_pronunciation": {
+      "selectors": [
+        ".uk-pronunciation", 
+        "[data-region='uk'] .audio-play",
+        "button[aria-label*='UK pronunciation']"
+      ],
+      "coordinates": {"x": 0.7, "y": 0.6},
+      "description": "UK pronunciation button"
+    }
+  },
+  "espn_timezone_elements": {
+    "timezone_dropdown": {
+      "selectors": [
+        ".timezone-select",
+        "[data-testid='timezone-dropdown']",
+        "select[name='timezone']"
+      ],
+      "coordinates": {"x": 0.9, "y": 0.1},
+      "description": "Timezone selector dropdown"
+    },
+    "et_option": {
+      "selectors": [
+        "option[value='ET']",
+        "[data-timezone='ET']"
+      ],
+      "description": "Eastern Time option"
+    }
+  },
+  "huggingface_elements": {
+    "bert_base_checkbox": {
+      "selectors": [
+        "[data-model='bert-base'] input[type='checkbox']",
+        ".model-card[data-name*='bert-base'] .compare-checkbox"
+      ],
+      "coordinates": {"x": 0.1, "y": 0.4},
+      "description": "BERT Base comparison checkbox"
+    },
+    "bert_large_checkbox": {
+      "selectors": [
+        "[data-model='bert-large'] input[type='checkbox']",
+        ".model-card[data-name*='bert-large'] .compare-checkbox"
+      ],
+      "coordinates": {"x": 0.1, "y": 0.6},
+      "description": "BERT Large comparison checkbox"
+    },
+    "compare_button": {
+      "selectors": [
+        ".compare-models-btn",
+        "[data-testid='compare-button']"
+      ],
+      "coordinates": {"x": 0.8, "y": 0.9},
+      "description": "Compare models button"
+    }
+  },
+  "booking_view_elements": {
+    "list_view_button": {
+      "selectors": [
+        "[data-testid='list-view']",
+        ".view-toggle-list",
+        "button[aria-label*='list view']"
+      ],
+      "coordinates": {"x": 0.9, "y": 0.2},
+      "description": "List view toggle button"
+    },
+    "hotel_price": {
+      "selectors": [
+        ".hotel-price",
+        "[data-testid='price-display']",
+        ".price-amount"
+      ],
+      "description": "Hotel price display elements"
+    }
+  },
+  "amazon_reviews_elements": {
+    "sort_dropdown": {
+      "selectors": [
+        "#sort-order-dropdown",
+        "[data-hook='review-sort-dropdown']",
+        ".review-sort-select"
+      ],
+      "coordinates": {"x": 0.8, "y": 0.3},
+      "description": "Review sort dropdown"
+    },
+    "most_helpful": {
+      "selectors": [
+        "option[value='helpful']",
+        "[data-sort='most-helpful']"
+      ],
+      "description": "Most helpful sort option"
+    }
+  },
+  "wolframalpha_conversion_elements": {
+    "fahrenheit_link": {
+      "selectors": [
+        "a[href*='fahrenheit']",
+        ".conversion-fahrenheit",
+        "[data-unit='fahrenheit']"
+      ],
+      "coordinates": {"x": 0.5, "y": 0.6},
+      "description": "Fahrenheit conversion link"
+    },
+    "kelvin_link": {
+      "selectors": [
+        "a[href*='kelvin']",
+        ".conversion-kelvin",
+        "[data-unit='kelvin']"
+      ],
+      "coordinates": {"x": 0.5, "y": 0.7},
+      "description": "Kelvin conversion link"
+    }
+  },
+  "bbc_video_elements": {
+    "progress_bar": {
+      "selectors": [
+        ".video-progress",
+        "[data-testid='video-scrubber']",
+        ".player-scrubber"
+      ],
+      "coordinates": {"x": 0.5, "y": 0.9},
+      "description": "Video progress bar"
+    },
+    "play_button": {
+      "selectors": [
+        ".play-btn",
+        "[data-testid='play-button']",
+        "button[aria-label*='play']"
+      ],
+      "coordinates": {"x": 0.1, "y": 0.9},
+      "description": "Video play button"
+    }
+  },
+  "gmaps_route_elements": {
+    "route_options": {
+      "selectors": [
+        ".route-options-btn",
+        "[data-testid='route-options']",
+        "button[aria-label*='options']"
+      ],
+      "coordinates": {"x": 0.9, "y": 0.3},
+      "description": "Route options button"
+    },
+    "avoid_tolls": {
+      "selectors": [
+        "[data-option='avoid-tolls']",
+        "input[value='avoid-tolls']",
+        ".toll-avoidance-checkbox"
+      ],
+      "coordinates": {"x": 0.1, "y": 0.5},
+      "description": "Avoid tolls option"
+    }
+  },
+  "espn_stats_elements": {
+    "playoffs_toggle": {
+      "selectors": [
+        ".playoffs-toggle",
+        "[data-testid='playoffs-stats']",
+        "button[aria-label*='playoffs']"
+      ],
+      "coordinates": {"x": 0.7, "y": 0.2},
+      "description": "Playoffs stats toggle"
+    },
+    "advanced_stats_expand": {
+      "selectors": [
+        ".advanced-stats-btn",
+        "[data-testid='expand-advanced']",
+        "button[aria-label*='advanced stats']"
+      ],
+      "coordinates": {"x": 0.5, "y": 0.8},
+      "description": "Advanced stats expansion button"
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "file_path": "/home/ubuntu/webarena/unit_tests/CPU/date_picker_test.log",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "max_file_size_mb": 10,
+    "backup_count": 3
+  }
+}

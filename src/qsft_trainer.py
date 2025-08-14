@@ -411,13 +411,11 @@ class QSFTTrainer:
     
 
     def evaluate(self, dataloader: DataLoader) -> Dict[str, float]:
-        """FIXED: Actually evaluate Q-SFT policy performance"""
-        print("Evaluating Q-SFT policy (not just behavior model)...")
+        print("Evaluating Q-SFT policy...")
         
         self.q_model.eval()
         self.behavior_model.eval()
         
-        # Test actual Q-SFT policy on a sample of states
         qsft_completions = 0
         behavior_completions = 0
         qsft_action_quality = 0
@@ -425,7 +423,7 @@ class QSFTTrainer:
         qsft_diversity = 0
         behavior_diversity = 0
         
-        num_eval_samples = min(20, len(dataloader.dataset))  # Evaluate on subset
+        num_eval_samples = min(20, len(dataloader.dataset))
         eval_count = 0
         
         with torch.no_grad():
@@ -433,7 +431,6 @@ class QSFTTrainer:
                 if eval_count >= num_eval_samples:
                     break
                     
-                # Extract state from batch
                 state_ids = batch['state_input_ids'][0:1]  # Take first item
                 state_text = self.tokenizer.decode(state_ids[0], skip_special_tokens=True)
                 state_text = state_text.replace("State: ", "").strip()
