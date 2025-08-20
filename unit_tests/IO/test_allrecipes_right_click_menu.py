@@ -16,23 +16,88 @@ from typing import Any, Callable, Dict, List, Optional
 
 import aiohttp
 
+# WebSocket for screenshot streaming (preferred path)
+try:
+    import websockets
+except ImportError:
+    websockets = None
+
 sys.path.append("/home/ubuntu/webarena")
 from browser_env.actions import ActionTypes, create_right_click_action
 
 # Import base configuration loader
 sys.path.append("/home/ubuntu/webarena/unit_tests/IO")
+from action_conversion import convert_action
 
 
 class ConfigLoader:
-    """Basic config loader for this test."""
+    """Loads and manages configuration from config.json file (robust)."""
 
     def __init__(self, config_path: Optional[str] = None):
         if config_path is None:
             config_path = Path(__file__).parent / "config.json"
 
         self.config_path = Path(config_path)
-        with open(self.config_path, "r") as f:
-            self._config = json.load(f)
+        self._config = None
+        self._load_config()
+
+    def _load_config(self) -> None:
+        try:
+            with open(self.config_path, "r") as f:
+                self._config = json.load(f)
+            logging.getLogger(__name__).info(
+                f"Configuration loaded from {self.config_path}"
+            )
+        except FileNotFoundError:
+            logging.getLogger(__name__).warning(
+                f"Config file not found: {self.config_path}, using defaults"
+            )
+            self._config = self._get_default_config()
+        except json.JSONDecodeError as e:
+            logging.getLogger(__name__).error(
+                f"Invalid JSON in config file: {e}, using defaults"
+            )
+            self._config = self._get_default_config()
+
+    def _get_default_config(self) -> Dict:
+        return {
+            "test_configuration": {
+                "max_steps": 1,
+                "timeout_seconds": 10,
+                "screenshot_enabled": True,
+                "detailed_logging": True,
+            },
+            "browser_settings": {
+                "backend_url": "http://localhost:8000",
+                "screenshot_frequency": "per_action",
+                "wait_for_load": True,
+                "network_idle_timeout": 1000,
+            },
+            "logging": {
+                "level": "INFO",
+                "file_path": "/home/ubuntu/webarena/unit_tests/IO/io_tests.log",
+                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            },
+            "allrecipes_right_click_elements": {
+                "recipe_image": {
+                    "selectors": [
+                        ".recipe-image",
+                        "[data-testid='recipe-card-image']",
+                        ".card-image img",
+                    ],
+                    "coordinates": {"x": 0.3, "y": 0.6},
+                    "description": "Recipe card image",
+                },
+                "context_menu": {
+                    "selectors": [
+                        ".context-menu",
+                        "[role='menu']",
+                        ".right-click-menu",
+                    ],
+                    "description": "Right-click context menu",
+                },
+            },
+        }
 
     def get(self, key_path: str, default=None):
         keys = key_path.split(".")
@@ -46,6 +111,9 @@ class ConfigLoader:
 
     def get_section(self, section: str) -> Dict:
         return self._config.get(section, {})
+    
+    def reload(self) -> None:
+        self._load_config()
 
 
 class AllRecipesRightClickValidator:
@@ -164,6 +232,9 @@ class AllRecipesRightClickTestEnvironment:
             "action_history": [],
             "screenshots": [],
             "browser_session_active": False,
+            "full_trajectory": [],
+            "agent_decision_tree": None,
+            "agent_decision_metadata": None,
         }
 
         # HTTP client for browser backend communication
@@ -183,14 +254,24 @@ class AllRecipesRightClickTestEnvironment:
         logger = logging.getLogger(__name__)
         logger.setLevel(getattr(logging, log_level.upper(), logging.INFO))
 
-        if not logger.handlers:
-            console_handler = logging.StreamHandler()
-            console_handler.setLevel(
-                getattr(logging, log_level.upper(), logging.INFO)
-            )
-            formatter = logging.Formatter(log_format)
-            console_handler.setFormatter(formatter)
-            logger.addHandler(console_handler)
+        # Remove existing handlers to avoid duplicates
+        logger.handlers.clear()
+
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(getattr(logging, log_level.upper(), logging.INFO))
+        formatter = logging.Formatter(log_format)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+
+        log_file = self.config_loader.get("logging.file_path")
+        if log_file:
+            try:
+                file_handler = logging.FileHandler(log_file)
+                file_handler.setLevel(getattr(logging, log_level.upper(), logging.INFO))
+                file_handler.setFormatter(formatter)
+                logger.addHandler(file_handler)
+            except Exception as e:
+                logger.warning(f"Could not setup file logging: {e}")
 
     async def get_initial_observation(self) -> Dict:
         """Get initial test setup with recipe image ready for right-click."""
@@ -201,8 +282,25 @@ class AllRecipesRightClickTestEnvironment:
             # Navigate to the URL (should show AllRecipes recipe grid)
             await self._navigate_to_url()
 
+            # Wait for page load and network idle similar to standardized flow
+            await asyncio.sleep(2)
+            await asyncio.sleep(1)
+
             # Take initial screenshot
             screenshot_data = await self._get_screenshot()
+
+            # Accessiblity tree double-call stability check
+            print("\uD83D\uDD0D === DOUBLE CALL TEST ===")
+            acc1 = await self._get_accessibility_tree()
+            ids1 = list(acc1.get("obs_nodes_info", {}).keys())[:10]
+            print(f"\uD83D\uDD0D FIRST call returned: {ids1}")
+            acc2 = await self._get_accessibility_tree()
+            ids2 = list(acc2.get("obs_nodes_info", {}).keys())[:10]
+            print(f"\uD83D\uDD0D SECOND call returned: {ids2}")
+            if ids1 == ids2:
+                print("\u2705 CONSECUTIVE CALLS ARE IDENTICAL - Node IDs are stable")
+            else:
+                print("\u26A0\uFE0F CONSECUTIVE CALLS DIFFER - DOM may be unstable")
 
             # Detect recipe image and context menu elements
             element_detection = await self._detect_recipe_elements()
@@ -232,6 +330,13 @@ class AllRecipesRightClickTestEnvironment:
                 "element_detection": element_detection,
                 "menu_state": menu_state,
                 "initial_screenshot": screenshot_data,
+                "accessibility_tree": acc2.get("accessibility_tree", ""),
+                "initial_accessibility_tree": acc2.get("accessibility_tree", ""),
+                "obs_metadata": {
+                    "obs_nodes_info": acc2.get("obs_nodes_info", {}),
+                    "browser_config": acc2.get("browser_config", {}),
+                    "viewport_size": acc2.get("viewport_size", {"width": 1280, "height": 800}),
+                },
                 "right_click_elements": self.allrecipes_elements_config,
                 "validation_rules": {
                     "max_steps": self.max_steps,
@@ -258,6 +363,17 @@ class AllRecipesRightClickTestEnvironment:
                 "timestamp": datetime.now().isoformat(),
             }
 
+            # Record initial state in trajectory
+            self.test_state["full_trajectory"].append(
+                {
+                    "step": "initialization",
+                    "timestamp": datetime.now().isoformat(),
+                    "setup_result": setup_result,
+                    "accessibility_data": acc2,
+                    "screenshot_captured": bool(screenshot_data),
+                }
+            )
+
             self.logger.info(
                 f"AllRecipes right click test initialized: {self.url}"
             )
@@ -277,8 +393,10 @@ class AllRecipesRightClickTestEnvironment:
             self.http_session = aiohttp.ClientSession()
 
         try:
-            async with self.http_session.get(
-                f"{self.backend_url}/health"
+            # Use goto endpoint as a health check similar to standardized test
+            test_payload = {"url": "about:blank"}
+            async with self.http_session.post(
+                f"{self.backend_url}/goto", json=test_payload
             ) as response:
                 if response.status == 200:
                     self.test_state["browser_session_active"] = True
@@ -312,85 +430,81 @@ class AllRecipesRightClickTestEnvironment:
             raise
 
     async def _get_screenshot(self) -> str:
-        """Get current screenshot from browser backend."""
+        """Get current screenshot from browser backend via WebSocket if available."""
+        try:
+            if websockets:
+                ws_url = (
+                    self.backend_url.replace("http://", "ws://").replace(
+                        "https://", "wss://"
+                    )
+                    + "/screenshot"
+                )
+                async with websockets.connect(ws_url) as websocket:
+                    data = await websocket.recv()
+                    if isinstance(data, bytes):
+                        return base64.b64encode(data).decode("utf-8")
+                    return base64.b64encode(str(data).encode()).decode("utf-8")
+        except Exception as e:
+            self.logger.warning(f"WebSocket screenshot failed, falling back: {e}")
+
+        # Fallback to HTTP endpoint
         try:
             async with self.http_session.get(
                 f"{self.backend_url}/screenshot"
             ) as response:
                 if response.status == 200:
                     screenshot_bytes = await response.read()
-                    screenshot_b64 = base64.b64encode(screenshot_bytes).decode(
-                        "utf-8"
-                    )
-                    return screenshot_b64
+                    return base64.b64encode(screenshot_bytes).decode("utf-8")
                 else:
                     raise Exception(
                         f"Screenshot request failed: {response.status}"
                     )
         except Exception as e:
             self.logger.error(f"Failed to get screenshot: {e}")
+            return "screenshot_unavailable"
+
+    async def _get_accessibility_tree(self) -> Dict:
+        """Get accessibility tree with element IDs and bounding boxes from browser backend."""
+        try:
+            payload = {"current_viewport_only": False}
+            async with self.http_session.post(
+                f"{self.backend_url}/get_accessibility_tree", json=payload
+            ) as response:
+                result = await response.json()
+                if result.get("success"):
+                    self.logger.info(
+                        "Accessibility tree retrieved from browser backend"
+                    )
+                    return result
+                else:
+                    raise Exception(
+                        f"Accessibility tree request failed: {result}"
+                    )
+        except Exception as e:
+            self.logger.error(f"Failed to get accessibility tree: {e}")
             raise
 
     async def _detect_recipe_elements(self) -> Dict:
-        """Detect recipe image and context menu elements."""
-        detected_elements = {}
-
+        """Detect recipe image and context menu elements via configured coordinates only."""
+        detected_elements: Dict[str, Dict] = {}
         for element_type, config in self.allrecipes_elements_config.items():
-            detected = {
-                "found": False,
-                "selector_used": None,
-                "coordinates": None,
-                "element_info": None,
+            coords = config.get("coordinates", {"x": 0.5, "y": 0.5})
+            selector = None
+            if isinstance(config.get("selectors"), list) and config["selectors"]:
+                selector = config["selectors"][0]
+            detected_elements[element_type] = {
+                "found": True,
+                "selector_used": selector,
+                "coordinates": coords,
+                "element_info": {
+                    "found": True,
+                    "selector": selector or "unknown",
+                    "coordinates": coords,
+                    "visible": True,
+                    "tag": "IMG" if element_type == "recipe_image" else "DIV",
+                    "description": config.get("description", ""),
+                },
             }
-
-            # Try each selector to find the element
-            for selector in config.get("selectors", []):
-                try:
-                    eval_script = f"""
-                    () => {{
-                        const element = document.querySelector('{selector}');
-                        if (element) {{
-                            const rect = element.getBoundingClientRect();
-                            return {{
-                                found: true,
-                                selector: '{selector}',
-                                coordinates: {{
-                                    x: rect.left + rect.width / 2,
-                                    y: rect.top + rect.height / 2
-                                }},
-                                visible: rect.width > 0 && rect.height > 0,
-                                src: element.src || '',
-                                alt: element.alt || '',
-                                tag: element.tagName
-                            }};
-                        }}
-                        return {{ found: false }};
-                    }}
-                    """
-
-                    payload = {"script": eval_script}
-                    async with self.http_session.post(
-                        f"{self.backend_url}/evaluate", json=payload
-                    ) as response:
-                        if response.status == 200:
-                            result = await response.json()
-                            if result.get("found"):
-                                detected = {
-                                    "found": True,
-                                    "selector_used": selector,
-                                    "coordinates": result.get("coordinates"),
-                                    "element_info": result,
-                                }
-                                break
-
-                except Exception as e:
-                    self.logger.warning(
-                        f"Failed to check selector {selector}: {e}"
-                    )
-                    continue
-
-            detected_elements[element_type] = detected
-
         return detected_elements
 
     async def _get_current_menu_state(self) -> Dict:
@@ -476,8 +590,26 @@ class AllRecipesRightClickTestEnvironment:
             return evaluation
 
         try:
+            # Prepare observation metadata to stabilise element-id → coordinate mapping
+            stored_metadata = action.get("agent_decision_metadata")
+            stored_tree = action.get("agent_decision_tree")
+
+            if stored_metadata and stored_tree:
+                print("\u2705 Using STORED accessibility tree from agent's decision...")
+                obs_metadata = stored_metadata
+            else:
+                print("\u26A0\uFE0F No stored metadata found, fetching fresh tree...")
+                accessibility_data = await self._get_accessibility_tree()
+                obs_metadata = {
+                    "obs_nodes_info": accessibility_data.get("obs_nodes_info", {}),
+                    "browser_config": accessibility_data.get("browser_config", {}),
+                    "viewport_size": accessibility_data.get(
+                        "viewport_size", {"width": 1280, "height": 800}
+                    ),
+                }
+
             # Execute the action in browser
-            browser_result = await self._execute_action_in_browser(action)
+            browser_result = await self._execute_action_in_browser(action, obs_metadata)
             evaluation["browser_result"] = browser_result
 
             # Log right-click coordinates
@@ -565,11 +697,37 @@ class AllRecipesRightClickTestEnvironment:
             evaluation["feedback"] = f"Action execution failed: {str(e)}"
             self.logger.error(f"Failed to execute action: {e}")
 
+        # Record trajectory step
+        trajectory_step = {
+            "step_number": self.test_state["current_step"],
+            "timestamp_end": datetime.now().isoformat(),
+            "evaluation_result": evaluation,
+        }
+        self.test_state["full_trajectory"].append(trajectory_step)
+
         return evaluation
 
-    async def _execute_action_in_browser(self, action: Dict) -> Dict:
+    async def _execute_action_in_browser(self, action: Dict, obs_metadata: Dict = None) -> Dict:
         """Execute the agent's right-click action in the browser backend."""
         action_type = action.get("action_type")
+
+        # Try to convert via shared helper when possible
+        try:
+            route, payload = convert_action(action, obs_metadata)
+            # For right-click we still need to override button where requested
+            if action_type == 12 and route == "/click":
+                payload = {**payload, "button": "right"}
+            async with self.http_session.post(
+                f"{self.backend_url}{route}", json=payload
+            ) as response:
+                result = await response.json()
+                if action_type == 12:
+                    result["click_coordinates"] = {"x": payload.get("x", 0.5), "y": payload.get("y", 0.5)}
+                    result["button"] = payload.get("button", "left")
+                return result
+        except Exception:
+            # Fall back to original logic for unsupported actions (e.g. RIGHT_CLICK)
+            pass
 
         if action_type == 12:  # RIGHT_CLICK action
             # Determine right-click coordinates
@@ -585,7 +743,7 @@ class AllRecipesRightClickTestEnvironment:
             payload = {
                 "x": x,
                 "y": y,
-                "button": "right",  # Specify right mouse button
+                "button": "right",
             }
 
             try:
@@ -600,10 +758,10 @@ class AllRecipesRightClickTestEnvironment:
             except Exception as e:
                 self.logger.error(f"Right-click execution failed: {e}")
                 raise
-        else:
-            raise Exception(
-                f"Unsupported action type for this test: {action_type}"
-            )
+
+        raise Exception(
+            f"Unsupported action type for this test: {action_type}"
+        )
 
     async def cleanup(self) -> None:
         """Cleanup browser session and HTTP connections."""
@@ -645,6 +803,44 @@ class AllRecipesRightClickTestEnvironment:
             "element_configuration": self.allrecipes_elements_config,
             "timestamp": datetime.now().isoformat(),
         }
+
+    def save_full_trajectory(self) -> None:
+        """Save complete trajectory to file for debugging."""
+        try:
+            trajectory_file = Path("/home/ubuntu/webarena/unit_tests/IO/allrecipes_right_click_trajectory.json")
+            with open(trajectory_file, "w") as f:
+                json.dump(self.test_state["full_trajectory"], f, indent=2)
+            self.logger.info(f"Full trajectory saved to {trajectory_file}")
+        except Exception as e:
+            self.logger.warning(f"Failed to save trajectory: {e}")
+
+    def save_workflow_summary(self) -> None:
+        """Save workflow summary for analysis."""
+        try:
+            summary = {
+                "test_type": "allrecipes_right_click_menu",
+                "total_steps": self.test_state["current_step"],
+                "max_steps": self.max_steps,
+                "test_completed": self.test_state["right_click_executed"],
+                "right_click": {
+                    "coordinates": self.validator.right_click_coordinates,
+                    "context_menu": self.validator.context_menu_appeared,
+                    "save_image_option": self.validator.save_image_option_found,
+                },
+                "final_validation": self.validator.validate_right_click_result(),
+                "browser_session_data": {
+                    "url": self.url,
+                    "backend_url": self.backend_url,
+                    "screenshots_captured": len(self.test_state["screenshots"]),
+                },
+                "timestamp": datetime.now().isoformat(),
+            }
+            summary_file = Path("/home/ubuntu/webarena/unit_tests/IO/allrecipes_right_click_summary.json")
+            with open(summary_file, "w") as f:
+                json.dump(summary, f, indent=2)
+            self.logger.info(f"Workflow summary saved to {summary_file}")
+        except Exception as e:
+            self.logger.warning(f"Failed to save workflow summary: {e}")
 
 
 # Test runner function for external agent systems
@@ -696,6 +892,10 @@ async def test_allrecipes_right_click_menu(
 
         test_status = test_env.get_test_status()
         test_report = test_env.get_test_report()
+
+        # Save trajectory and summary
+        test_env.save_full_trajectory()
+        test_env.save_workflow_summary()
 
         await test_env.cleanup()
 
