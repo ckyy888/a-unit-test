@@ -5,19 +5,19 @@ that can be used in any environment, not just WebArena.
 """
 
 from .action_sequence_tests import ActionSequenceTestMixin
-from .recovery_action_tests import RecoveryActionTestMixin
+from .container_tests import ContainerTestMixin
 from .exception_tests import ExceptionTestMixin
 from .method_call_order_tests import MethodCallOrderTestMixin
+from .recovery_action_tests import RecoveryActionTestMixin
 from .state_equality_tests import StateEqualityTestMixin
-from .container_tests import ContainerTestMixin
 from .trajectory_convergence_tests import TrajectoryConvergenceTestMixin
 
 __all__ = [
-    'ActionSequenceTestMixin',
-    'RecoveryActionTestMixin', 
-    'ExceptionTestMixin',
-    'MethodCallOrderTestMixin',
-    'StateEqualityTestMixin',
-    'ContainerTestMixin',
-    'TrajectoryConvergenceTestMixin',
-] 
+    "ActionSequenceTestMixin",
+    "RecoveryActionTestMixin",
+    "ExceptionTestMixin",
+    "MethodCallOrderTestMixin",
+    "StateEqualityTestMixin",
+    "ContainerTestMixin",
+    "TrajectoryConvergenceTestMixin",
+]
