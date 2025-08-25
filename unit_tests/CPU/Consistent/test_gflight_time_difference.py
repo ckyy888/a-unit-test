@@ -1,4 +1,3 @@
-
 import asyncio
 import os
 import base64
@@ -178,7 +177,7 @@ class GoogleFlightsTimeDifferenceTest:
                 draw.ellipse(
                     [(pred_x - 15, pred_y - 15), (pred_x + 15, pred_y + 15)], outline=outline_color, width=3
                 )
-                draw.text((pred_x + 20, pred_y + 30), 'Prediction', fill=outline_color, font=font)
+                draw.text((pred_x + 20, pred_y + 30), 'Click', fill=outline_color, font=font)
 
             output_filename = f'rec1.png'
             if is_in_bbox:

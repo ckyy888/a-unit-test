@@ -1,3 +1,4 @@
+#REPLACE.
 import asyncio
 import os
 import sys
@@ -11,31 +12,33 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from cua_test_runner_v2 import run_agent_test  # type: ignore
 
 
-class GoogleFlightsTimeDifferenceVariantTest:
+class GoogleFlightsRoutingComplexityTest:
     def __init__(self):
-        # Placeholder Google Flights URL
-        self.url = "https://example.com/google/flights/details"
+        self.url = "https://example.com/flights/search?from=NYC&to=PAR"
         self.first_task_description = (
             """
-            Agent 1: Choose a flight that lands on an earlier date than the departure date.
-            Task: Verify details and proceed to select the flight.
+            Agent 1: Choose the direct flight NYC → Paris for $800 and proceed to checkout.
             """
         )
         self.second_task_description = (
             """
-            Agent 2: Choose a flight that lands one day after the departure date.
-            Task: Verify details and proceed to select the flight.
+            Agent 2: Compare 1-stop options:
+              - NYC→London $400 + London→Paris $300 (8hr layover)
+              - NYC→Frankfurt $450 + Frankfurt→Paris $200 (2hr layover)
+            Select the best routing considering price and layover and proceed to checkout.
             """
         )
 
-    def evaluate_selection(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
+    def evaluate_checkout(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
         final_url = agent_result.get("final_url", "")
-        success_prefix = "https://example.com/google/flights/choose-travelers"
+        success_prefix = "https://example.com/flights/checkout"
         passed = final_url.startswith(success_prefix)
         return {
             "passed": passed,
             "reason": (
-                "Flight selection initiated" if passed else f"Unexpected final URL: {final_url}"
+                "Reached checkout after selecting appropriate routing"
+                if passed
+                else f"Unexpected final URL: {final_url}"
             ),
             "expected": f"Final URL starts with {success_prefix}",
             "actual": final_url,
@@ -43,10 +46,10 @@ class GoogleFlightsTimeDifferenceVariantTest:
 
     async def run_first_test(self, task_description: str) -> Dict[str, Any]:
         result = await run_agent_test(self.url, task_description)
-        evaluation = self.evaluate_selection(result)
+        evaluation = self.evaluate_checkout(result)
         return {
             "test_name": "first_test",
-            "scenario": "lands_earlier_date",
+            "scenario": "direct_flight",
             "agent_result": result,
             "evaluation": evaluation,
             "passed": evaluation["passed"],
@@ -54,10 +57,10 @@ class GoogleFlightsTimeDifferenceVariantTest:
 
     async def run_second_test(self, task_description: str) -> Dict[str, Any]:
         result = await run_agent_test(self.url, task_description)
-        evaluation = self.evaluate_selection(result)
+        evaluation = self.evaluate_checkout(result)
         return {
             "test_name": "second_test",
-            "scenario": "lands_next_day",
+            "scenario": "one_stop_comparison",
             "agent_result": result,
             "evaluation": evaluation,
             "passed": evaluation["passed"],
@@ -83,15 +86,14 @@ class GoogleFlightsTimeDifferenceVariantTest:
         }
 
 
-async def test_gflights_time_difference():
-    test_runner = GoogleFlightsTimeDifferenceVariantTest()
+async def test_google_flights_routing_complexity():
+    test_runner = GoogleFlightsRoutingComplexityTest()
     results = await test_runner.run_both_tests(
-        test_runner.first_task_description,
-        test_runner.second_task_description,
+        test_runner.first_task_description, test_runner.second_task_description
     )
 
     print("\n" + "=" * 50)
-    print("GOOGLE FLIGHTS TIME DIFFERENCE VARIANT TEST RESULTS")
+    print("GOOGLE FLIGHTS ROUTING COMPLEXITY TEST RESULTS")
     print("=" * 50)
     for test_name, test_result in [
         ("First Test", results["first_test"]),
@@ -113,7 +115,7 @@ async def test_gflights_time_difference():
 
 
 async def main():
-    return await test_gflights_time_difference()
+    return await test_google_flights_routing_complexity()
 
 
 if __name__ == "__main__":

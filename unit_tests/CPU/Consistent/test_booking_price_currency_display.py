@@ -8,33 +8,30 @@ from dotenv import load_dotenv
 load_dotenv()
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
-from cua_test_runner_v2 import run_agent_test  # type: ignore
+from cua_test_runner_v2 import run_agent_test 
 
 
 class BookingPriceCurrencyDisplayTest:
     def __init__(self):
-        # Placeholder hotel booking URL
-        self.url = "https://example.com/hotels/booking/details"
+        self.first_url = "https://www.booking.com/hotel/gb/capsules-by-zedwell.en-gb.html?aid=336408&label=london-4ILnGvsrD%2AaMG1hpvTmXBQS650650528715%3Apl%3Ata%3Ap13060%3Ap2%3Aac%3Aap%3Aneg%3Afi%3Atikwd-12080521%3Alp9031967%3Ali%3Adec%3Adm%3Appccp%3DUmFuZG9tSVYkc2RlIyh9YavywThF4buZQ9k1iY7Jbs4&sid=35eda8675e10faa2560ef0124f7fe829&all_sr_blocks=1355922903_407898173_0_0_0&checkin=2026-01-01&checkout=2026-01-03&dest_id=-2601889&dest_type=city&dist=0&group_adults=1&group_children=0&hapos=1&highlighted_blocks=1355922903_407898173_0_0_0&hpos=1&matching_block_id=1355922903_407898173_0_0_0&no_rooms=1&req_adults=1&req_children=0&room1=A&sb_price_type=total&sr_order=popularity&sr_pri_blocks=1355922903_407898173_0_0_0__7425&srepoch=1756157921&srpvid=4f70982c0d8705cf&type=total&ucfs=1&"
+        self.second_url = "https://www.booking.com/hotel/gb/capsules-by-zedwell.en-gb.html?aid=336408&label=london-4ILnGvsrD*aMG1hpvTmXBQS650650528715%3Apl%3Ata%3Ap13060%3Ap2%3Aac%3Aap%3Aneg%3Afi%3Atikwd-12080521%3Alp9031967%3Ali%3Adec%3Adm%3Appccp%3DUmFuZG9tSVYkc2RlIyh9YavywThF4buZQ9k1iY7Jbs4&sid=35eda8675e10faa2560ef0124f7fe829&all_sr_blocks=1355922903_407898173_0_0_0&checkin=2026-01-01&checkout=2026-01-03&dest_id=-2601889&dest_type=city&dist=0&group_adults=1&group_children=0&hapos=1&highlighted_blocks=1355922903_407898173_0_0_0&hpos=1&matching_block_id=1355922903_407898173_0_0_0&no_rooms=1&req_adults=1&req_children=0&room1=A&sb_price_type=total&sr_order=popularity&sr_pri_blocks=1355922903_407898173_0_0_0__7425&srepoch=1756157921&srpvid=4f70982c0d8705cf&type=total&ucfs=1&selected_currency=JPY"
+
         self.first_task_description = (
             """
-            Agent 1: You are booking a hotel room. Prices are displayed in USD, e.g., "$120 USD".
-            Your goal: Complete the booking flow for the same hotel room regardless of currency format.
-
-            Steps:
-            1) Verify the hotel name and room type match the expected option
-            2) Confirm total price is $120 USD (equivalent to HKD shown elsewhere)
-            3) Click the button to proceed to finalize booking
+            You are a travel assistant. You are tasked with booking a room in the Zedwell Capsule Hotel Piccadilly Circus in London 
+            for your very particular American client, who will be staying for 2 nights from 2026-01-01 to 2026-01-03. 
+            Your client is willing to pay between 100 and 200 dollars in total.
+            You have found the hotel's booking page. You are on the hotel page and you are checking the price, about to
+            reserve the room.
             """
         )
         self.second_task_description = (
             """
-            Agent 2: You are booking a hotel room. Prices are displayed in HKD, e.g., "$937.60 HKD".
-            Your goal: Complete the booking flow for the same hotel room regardless of currency format.
-
-            Steps:
-            1) Verify the hotel name and room type match the expected option
-            2) Confirm total price is HKD 937.60 (equivalent to $120 USD)
-            3) Click the button to proceed to finalize booking
+            You are a travel assistant. You are tasked with booking a room in the Zedwell Capsule Hotel Piccadilly Circus in London 
+            for your very particular American client, who will be staying for 2 nights from 2026-01-01 to 2026-01-03. 
+            Your client is willing to pay between 100 and 200 dollars in total.
+            You have found the hotel's booking page. You are on the hotel page and you are checking the price, about to
+            reserve the room.
             """
         )
 
@@ -44,7 +41,7 @@ class BookingPriceCurrencyDisplayTest:
     ) -> Dict[str, Any]:
         """Evaluate by checking final URL reaches a placeholder confirmation endpoint."""
         final_url = agent_result.get("final_url", "")
-        success_prefix = "https://example.com/hotels/booking/confirmation"
+        success_prefix = "https://secure.booking.com/"
         passed = final_url.startswith(success_prefix)
         return {
             "passed": passed,
@@ -56,7 +53,7 @@ class BookingPriceCurrencyDisplayTest:
         }
 
     async def run_first_test(self, task_description: str) -> Dict[str, Any]:
-        result = await run_agent_test(self.url, task_description)
+        result = await run_agent_test(self.first_url, task_description)
         evaluation = self.evaluate_booking_completion(result)
         return {
             "test_name": "first_test",
@@ -67,7 +64,7 @@ class BookingPriceCurrencyDisplayTest:
         }
 
     async def run_second_test(self, task_description: str) -> Dict[str, Any]:
-        result = await run_agent_test(self.url, task_description)
+        result = await run_agent_test(self.second_url, task_description)
         evaluation = self.evaluate_booking_completion(result)
         return {
             "test_name": "second_test",

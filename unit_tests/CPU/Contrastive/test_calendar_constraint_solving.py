@@ -1,3 +1,4 @@
+#LATER.
 import asyncio
 import os
 import sys
@@ -11,32 +12,31 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from cua_test_runner_v2 import run_agent_test  # type: ignore
 
 
-class BBCDateFormatReasoningTest:
+class CalendarConstraintSolvingTest:
     def __init__(self):
-        self.url = "https://example.com/bbc/news/article"
+        self.url = "https://example.com/calendar/schedule"
         self.first_task_description = (
             """
-            Agent 1: Dates are displayed as "05-03-2024" in UK format (DD-MM-YYYY).
-            Task: Interpret the date correctly as March 5, 2024 and proceed to the summary confirmation.
+            Agent 1: Schedule a meeting with a single time slot that satisfies all constraints.
+            Task: Proceed to the meeting confirmation page.
             """
         )
         self.second_task_description = (
             """
-            Agent 2: Dates are displayed as "03-05-2024" in US format (MM-DD-YYYY).
-            Task: Interpret the date correctly as March 5, 2024 and proceed to the summary confirmation.
+            Agent 2: Schedule the same meeting but resolve multiple conflicting constraints
+            (attendee availability, room booking conflicts, time zones). Task: Proceed to the
+            meeting confirmation page.
             """
         )
 
-    def evaluate_summary(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
+    def evaluate_confirmation(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
         final_url = agent_result.get("final_url", "")
-        success_prefix = "https://example.com/bbc/news/summary"
+        success_prefix = "https://example.com/calendar/confirmation"
         passed = final_url.startswith(success_prefix)
         return {
             "passed": passed,
             "reason": (
-                "Reached summary with correct date interpretation"
-                if passed
-                else f"Unexpected final URL: {final_url}"
+                "Meeting scheduled and confirmed" if passed else f"Unexpected final URL: {final_url}"
             ),
             "expected": f"Final URL starts with {success_prefix}",
             "actual": final_url,
@@ -44,10 +44,10 @@ class BBCDateFormatReasoningTest:
 
     async def run_first_test(self, task_description: str) -> Dict[str, Any]:
         result = await run_agent_test(self.url, task_description)
-        evaluation = self.evaluate_summary(result)
+        evaluation = self.evaluate_confirmation(result)
         return {
             "test_name": "first_test",
-            "scenario": "uk_format",
+            "scenario": "single_slot",
             "agent_result": result,
             "evaluation": evaluation,
             "passed": evaluation["passed"],
@@ -55,10 +55,10 @@ class BBCDateFormatReasoningTest:
 
     async def run_second_test(self, task_description: str) -> Dict[str, Any]:
         result = await run_agent_test(self.url, task_description)
-        evaluation = self.evaluate_summary(result)
+        evaluation = self.evaluate_confirmation(result)
         return {
             "test_name": "second_test",
-            "scenario": "us_format",
+            "scenario": "conflicting_constraints",
             "agent_result": result,
             "evaluation": evaluation,
             "passed": evaluation["passed"],
@@ -84,14 +84,14 @@ class BBCDateFormatReasoningTest:
         }
 
 
-async def test_bbc_date_format_reasoning():
-    test_runner = BBCDateFormatReasoningTest()
+async def test_calendar_constraint_solving():
+    test_runner = CalendarConstraintSolvingTest()
     results = await test_runner.run_both_tests(
         test_runner.first_task_description, test_runner.second_task_description
     )
 
     print("\n" + "=" * 50)
-    print("BBC DATE FORMAT REASONING TEST RESULTS")
+    print("CALENDAR CONSTRAINT SOLVING TEST RESULTS")
     print("=" * 50)
     for test_name, test_result in [
         ("First Test", results["first_test"]),
@@ -113,7 +113,7 @@ async def test_bbc_date_format_reasoning():
 
 
 async def main():
-    return await test_bbc_date_format_reasoning()
+    return await test_calendar_constraint_solving()
 
 
 if __name__ == "__main__":

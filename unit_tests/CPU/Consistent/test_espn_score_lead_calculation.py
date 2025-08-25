@@ -1,3 +1,4 @@
+#LATER.
 import asyncio
 import os
 import sys
@@ -11,30 +12,30 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from cua_test_runner_v2 import run_agent_test  # type: ignore
 
 
-class AmazonSizeDimensionsTest:
+class ESPNScoreLeadCalculationTest:
     def __init__(self):
-        self.url = "https://example.com/amazon/product/mat"
+        self.url = "https://example.com/espn/game/live"
         self.first_task_description = (
             """
-            Agent 1: Verify the product dimensions meet the minimum requirement (e.g., 18x24 inches).
-            Do not trust category or product title alone. Confirm size on the page and proceed to add to cart only if requirements are met.
+            Agent 1: You see the score displayed as "Lakers 108, Warriors 95".
+            Task: Report the leading team and proceed to the summary page.
             """
         )
         self.second_task_description = (
             """
-            Agent 2: The category suggests an appropriate size, but you must confirm actual dimensions on the page.
-            Proceed to add to cart only if the larger mat meets the requirement. Otherwise, do not proceed.
+            Agent 2: You see the lead displayed as "Lakers lead by 13".
+            Task: Report the leading team consistently and proceed to the summary page.
             """
         )
 
-    def evaluate_add_to_cart(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
+    def evaluate_summary(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
         final_url = agent_result.get("final_url", "")
-        success_prefix = "https://example.com/amazon/cart"
+        success_prefix = "https://example.com/espn/game/summary"
         passed = final_url.startswith(success_prefix)
         return {
             "passed": passed,
             "reason": (
-                "Added to cart after verifying dimensions"
+                "Reached summary page after consistent lead reasoning"
                 if passed
                 else f"Unexpected final URL: {final_url}"
             ),
@@ -44,10 +45,10 @@ class AmazonSizeDimensionsTest:
 
     async def run_first_test(self, task_description: str) -> Dict[str, Any]:
         result = await run_agent_test(self.url, task_description)
-        evaluation = self.evaluate_add_to_cart(result)
+        evaluation = self.evaluate_summary(result)
         return {
             "test_name": "first_test",
-            "scenario": "verify_dimensions_minimum",
+            "scenario": "score_view",
             "agent_result": result,
             "evaluation": evaluation,
             "passed": evaluation["passed"],
@@ -55,10 +56,10 @@ class AmazonSizeDimensionsTest:
 
     async def run_second_test(self, task_description: str) -> Dict[str, Any]:
         result = await run_agent_test(self.url, task_description)
-        evaluation = self.evaluate_add_to_cart(result)
+        evaluation = self.evaluate_summary(result)
         return {
             "test_name": "second_test",
-            "scenario": "verify_dimensions_large_variant",
+            "scenario": "lead_view",
             "agent_result": result,
             "evaluation": evaluation,
             "passed": evaluation["passed"],
@@ -84,14 +85,14 @@ class AmazonSizeDimensionsTest:
         }
 
 
-async def test_amazon_size_dimensions():
-    test_runner = AmazonSizeDimensionsTest()
+async def test_espn_score_lead_calculation():
+    test_runner = ESPNScoreLeadCalculationTest()
     results = await test_runner.run_both_tests(
         test_runner.first_task_description, test_runner.second_task_description
     )
 
     print("\n" + "=" * 50)
-    print("AMAZON SIZE DIMENSIONS TEST RESULTS")
+    print("ESPN SCORE LEAD CALCULATION TEST RESULTS")
     print("=" * 50)
     for test_name, test_result in [
         ("First Test", results["first_test"]),
@@ -113,7 +114,7 @@ async def test_amazon_size_dimensions():
 
 
 async def main():
-    return await test_amazon_size_dimensions()
+    return await test_espn_score_lead_calculation()
 
 
 if __name__ == "__main__":

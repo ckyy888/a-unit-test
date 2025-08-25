@@ -1,3 +1,5 @@
+#IMPOSSIBLE. CHANGE.
+
 import asyncio
 import os
 import sys
@@ -11,31 +13,32 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from cua_test_runner_v2 import run_agent_test  # type: ignore
 
 
-class CalendarConstraintSolvingTest:
+class AmazonSizeDimensionsTest:
     def __init__(self):
-        self.url = "https://example.com/calendar/schedule"
+        self.url = "https://example.com/amazon/product/mat"
         self.first_task_description = (
             """
-            Agent 1: Schedule a meeting with a single time slot that satisfies all constraints.
-            Task: Proceed to the meeting confirmation page.
+            You are a shopping assistant. Verify the product dimensions meet the minimum requirement (e.g., 18x24 inches).
+            Confirm size on the page and proceed to add to cart only if requirements are met.
             """
         )
         self.second_task_description = (
             """
-            Agent 2: Schedule the same meeting but resolve multiple conflicting constraints
-            (attendee availability, room booking conflicts, time zones). Task: Proceed to the
-            meeting confirmation page.
+            You are a shopping assistant. Verify the product dimensions meet the minimum requirement (e.g., 18x24 inches).
+            Confirm size on the page and proceed to add to cart only if requirements are met.
             """
         )
 
-    def evaluate_confirmation(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
+    def evaluate_add_to_cart(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
         final_url = agent_result.get("final_url", "")
-        success_prefix = "https://example.com/calendar/confirmation"
+        success_prefix = "https://example.com/amazon/cart"
         passed = final_url.startswith(success_prefix)
         return {
             "passed": passed,
             "reason": (
-                "Meeting scheduled and confirmed" if passed else f"Unexpected final URL: {final_url}"
+                "Added to cart after verifying dimensions"
+                if passed
+                else f"Unexpected final URL: {final_url}"
             ),
             "expected": f"Final URL starts with {success_prefix}",
             "actual": final_url,
@@ -43,10 +46,10 @@ class CalendarConstraintSolvingTest:
 
     async def run_first_test(self, task_description: str) -> Dict[str, Any]:
         result = await run_agent_test(self.url, task_description)
-        evaluation = self.evaluate_confirmation(result)
+        evaluation = self.evaluate_add_to_cart(result)
         return {
             "test_name": "first_test",
-            "scenario": "single_slot",
+            "scenario": "verify_dimensions_minimum",
             "agent_result": result,
             "evaluation": evaluation,
             "passed": evaluation["passed"],
@@ -54,10 +57,10 @@ class CalendarConstraintSolvingTest:
 
     async def run_second_test(self, task_description: str) -> Dict[str, Any]:
         result = await run_agent_test(self.url, task_description)
-        evaluation = self.evaluate_confirmation(result)
+        evaluation = self.evaluate_add_to_cart(result)
         return {
             "test_name": "second_test",
-            "scenario": "conflicting_constraints",
+            "scenario": "verify_dimensions_large_variant",
             "agent_result": result,
             "evaluation": evaluation,
             "passed": evaluation["passed"],
@@ -83,14 +86,14 @@ class CalendarConstraintSolvingTest:
         }
 
 
-async def test_calendar_constraint_solving():
-    test_runner = CalendarConstraintSolvingTest()
+async def test_amazon_size_dimensions():
+    test_runner = AmazonSizeDimensionsTest()
     results = await test_runner.run_both_tests(
         test_runner.first_task_description, test_runner.second_task_description
     )
 
     print("\n" + "=" * 50)
-    print("CALENDAR CONSTRAINT SOLVING TEST RESULTS")
+    print("AMAZON SIZE DIMENSIONS TEST RESULTS")
     print("=" * 50)
     for test_name, test_result in [
         ("First Test", results["first_test"]),
@@ -112,7 +115,7 @@ async def test_calendar_constraint_solving():
 
 
 async def main():
-    return await test_calendar_constraint_solving()
+    return await test_amazon_size_dimensions()
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+#CHANGE TO SCREENSHOT.
 import asyncio
 import os
 import sys
@@ -11,31 +12,31 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from cua_test_runner_v2 import run_agent_test  # type: ignore
 
 
-class GoogleFlightsRoutingComplexityTest:
+class BBCDateFormatReasoningTest:
     def __init__(self):
-        self.url = "https://example.com/flights/search?from=NYC&to=PAR"
+        self.url = "https://example.com/bbc/news/article"
         self.first_task_description = (
             """
-            Agent 1: Choose the direct flight NYC → Paris for $800 and proceed to checkout.
+            You are a research assistant. You have been tasked with finding a news article that
+            was published on March Dates are displayed as "05-03-2024" in UK format (DD-MM-YYYY).
+            Interpret the date correctly as March 5, 2024 and proceed to the summary confirmation.
             """
         )
         self.second_task_description = (
             """
-            Agent 2: Compare 1-stop options:
-              - NYC→London $400 + London→Paris $300 (8hr layover)
-              - NYC→Frankfurt $450 + Frankfurt→Paris $200 (2hr layover)
-            Select the best routing considering price and layover and proceed to checkout.
+            You are a news assistant. Dates are displayed as "03-05-2024" in US format (MM-DD-YYYY).
+            Interpret the date correctly as March 5, 2024 and proceed to the summary confirmation.
             """
         )
 
-    def evaluate_checkout(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
+    def evaluate_summary(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
         final_url = agent_result.get("final_url", "")
-        success_prefix = "https://example.com/flights/checkout"
+        success_prefix = "https://example.com/bbc/news/summary"
         passed = final_url.startswith(success_prefix)
         return {
             "passed": passed,
             "reason": (
-                "Reached checkout after selecting appropriate routing"
+                "Reached summary with correct date interpretation"
                 if passed
                 else f"Unexpected final URL: {final_url}"
             ),
@@ -45,10 +46,10 @@ class GoogleFlightsRoutingComplexityTest:
 
     async def run_first_test(self, task_description: str) -> Dict[str, Any]:
         result = await run_agent_test(self.url, task_description)
-        evaluation = self.evaluate_checkout(result)
+        evaluation = self.evaluate_summary(result)
         return {
             "test_name": "first_test",
-            "scenario": "direct_flight",
+            "scenario": "uk_format",
             "agent_result": result,
             "evaluation": evaluation,
             "passed": evaluation["passed"],
@@ -56,10 +57,10 @@ class GoogleFlightsRoutingComplexityTest:
 
     async def run_second_test(self, task_description: str) -> Dict[str, Any]:
         result = await run_agent_test(self.url, task_description)
-        evaluation = self.evaluate_checkout(result)
+        evaluation = self.evaluate_summary(result)
         return {
             "test_name": "second_test",
-            "scenario": "one_stop_comparison",
+            "scenario": "us_format",
             "agent_result": result,
             "evaluation": evaluation,
             "passed": evaluation["passed"],
@@ -85,14 +86,14 @@ class GoogleFlightsRoutingComplexityTest:
         }
 
 
-async def test_google_flights_routing_complexity():
-    test_runner = GoogleFlightsRoutingComplexityTest()
+async def test_bbc_date_format_reasoning():
+    test_runner = BBCDateFormatReasoningTest()
     results = await test_runner.run_both_tests(
         test_runner.first_task_description, test_runner.second_task_description
     )
 
     print("\n" + "=" * 50)
-    print("GOOGLE FLIGHTS ROUTING COMPLEXITY TEST RESULTS")
+    print("BBC DATE FORMAT REASONING TEST RESULTS")
     print("=" * 50)
     for test_name, test_result in [
         ("First Test", results["first_test"]),
@@ -114,7 +115,7 @@ async def test_google_flights_routing_complexity():
 
 
 async def main():
-    return await test_google_flights_routing_complexity()
+    return await test_bbc_date_format_reasoning()
 
 
 if __name__ == "__main__":
