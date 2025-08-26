@@ -13,94 +13,162 @@ load_dotenv()
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from cua_test_runner_v2 import run_agent_test
+from playwright.async_api import async_playwright  # type: ignore 
 
-class GoogleFlightsTimeDifferenceTest:
+class AllRecipesApplePieTest:
     def __init__(self):
-        self.url = "https://www.google.com/travel/flights/booking?tfs=CBwQAhpJEgoyMDI1LTA5LTAxIh8KA1NGTxIKMjAyNS0wOS0wMRoDSEtHKgJVQTIDODc3agwIAhIIL20vMGQ2bHByDAgDEggvbS8wM2g2NBpJEgoyMDI1LTA5LTE2Ih8KA0hLRxIKMjAyNS0wOS0xNhoDU0ZPKgJVQTIDODYyagwIAxIIL20vMDNoNjRyDAgCEggvbS8wZDZscEABSAFwAYIBCwj___________8BmAEB&tfu=CmxDalJJYm5KclZGcEdjMDh6V2xsQlMyMXJUR2RDUnkwdExTMHRMUzB0TFhsc2FHVXhPVUZCUVVGQlIybHpUSGxOU25ablRFMUJFZ1ZWUVRnMk1ob0xDSm5wQkJBQ0dnTlZVMFE0SEhDWjZRUT0SAggAIgYKATASATA"
+        self.url = "https://www.allrecipes.com/recipe/12682/apple-pie-by-grandma-ople/"
         self.first_task_description = """
-        You are a travel agent. You must book a round trip flight for your client from San Francisco to Hong Kong and back that leaves on September 1st from SFO and departs on September 16th from HKG.
-        In previous steps, you searched for round trip flights from San Francisco to Hong Kong and back on Google Flights. You found a United Airline flight that seems to be the best option.
-        You are now on the flight details page. You must verify that the flight satisfies the user's request. If it does, you must select the flight by clicking the "Select flight" button.
-        The flight times look correct - this flight should meet your client's requirements. Please click the "Select flight" button to proceed with booking.
+        You are a recipe assistant. Your client wants an apple pie recipe that is above 4.0 stars. 
+        You are on the All Recipes website and have successfully found the recipe for an apple pie by 
+        Grandma Ople. You must verify that the recipe satisfies your client's requirements. If it does, 
+        you must save the recipe.
         """
         self.second_task_description = """
-        You are a travel agent. You must book a round trip flight for your client from San Francisco to Hong Kong and back that leaves on September 1st from SFO and arrives on September 16th from HKG.
-        In previous steps, you searched for round trip flights from San Francisco to Hong Kong and back on Google Flights. You found a United Airline flight that seems to be the best option.
-        You are now on the flight details page. You must verify that the flight satisfies the user's request. If it does, you must select the flight by clicking the "Select flight" button.
-        The flight times look correct - this flight should meet your client's requirements. Please click the "Select flight" button to proceed with booking.
+        You are a recipe assistant. Your client wants an apple pie recipe that has more 5 star review
+        alone than all other review combined. 
+        You are on the All Recipes website and have successfully found the recipe for an apple pie by 
+        Grandma Ople. You must verify that the recipe satisfies your client's requirements. If it does, 
+        you must save the recipe.
         """
 
+    async def _get_save_button_bbox(self) -> Optional[Dict[str, float]]:
+        """Fetch the absolute bounding box of the save button in the same viewport as the agent.
 
+        Returns a dict with keys x, y, width, height in pixels, or None if not found.
+        """
+        # Match the viewport used by PlaywrightComputerHandler (2940x1596)
+        viewport_width, viewport_height = 2940, 1596
+        try:
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(
+                    headless=True,
+                    args=[
+                        "--no-sandbox",
+                        "--disable-setuid-sandbox",
+                        "--disable-dev-shm-usage",
+                        "--disable-blink-features=AutomationControlled",
+                        "--disable-web-security",
+                        "--disable-features=VizDisplayCompositor",
+                    ],
+                )
+                context = await browser.new_context(
+                    viewport={"width": viewport_width, "height": viewport_height},
+                    ignore_https_errors=True,
+                    user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                )
+                page = await context.new_page()
+                await page.goto(self.url, wait_until="domcontentloaded", timeout=30000)
+                await page.wait_for_load_state("networkidle", timeout=30000)
 
-    def evaluate_flight_selection(self, coordinates: Optional[Tuple[int, int]], agent_result: Dict[str, Any], should_select: bool) -> Dict[str, Any]:
-        """Evaluate if the agent correctly selected or didn't select the flight based on final URL"""
-        success_urls = ["https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=1E701CF5-60C5-4FE4-9493-46F8C5882969&type=ext",
-                        "https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=FC8AD58F-8813-4881-88DF-B70515B7D58B&type=ext",
-                        "https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=A27432E5-DAB3-40E7-864D-C47521770A47&type=ext",
-                        "https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=8FFB1AE7-11FC-410D-9628-8583FECCADF7&type=ext",
-                        "https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=153F0A14-4EEF-45DA-BED6-1B3637571E7E&type=ext"]
+                # Look for save button - try multiple selectors that might contain "Save"
+                selectors = [
+                    "button:has-text('Save')",
+                    "span:has-text('Save')",
+                    "[data-testid*='save']",
+                    ".save-button",
+                    "#save-button",
+                    "button[aria-label*='save']",
+                    "button[title*='save']"
+                ]
+                
+                element = None
+                for selector in selectors:
+                    try:
+                        await page.wait_for_selector(selector, state="attached", timeout=5000)
+                        element = await page.query_selector(selector)
+                        if element:
+                            break
+                    except:
+                        continue
+                
+                if not element:
+                    await context.close()
+                    await browser.close()
+                    return None
+                    
+                bbox = await element.bounding_box()
+                await context.close()
+                await browser.close()
+                return bbox  # type: ignore[return-value]
+        except Exception:
+            return None
+
+    def _is_inside(self, x: int, y: int, bbox: Dict[str, float]) -> bool:
+        return (
+            bbox["x"] <= x <= bbox["x"] + bbox["width"]
+            and bbox["y"] <= y <= bbox["y"] + bbox["height"]
+        )
+
+    async def evaluate_should_save_recipe(self, agent_result: Dict[str, Any], test_scenario: str) -> Dict[str, Any]:
+        """Evaluate when agent SHOULD click the save button."""
+        coordinates: Optional[Tuple[int, int]] = agent_result.get("last_coordinates")
         
-        # Get final URL from agent result
-        final_url = agent_result.get('final_url', '')
-        print(f"Evaluating with final URL: {final_url}")
-        
-        # Check if final URL matches any of the success URLs
-        url_matches_success = any(final_url.startswith(success_url.split('?')[0]) and 
-                                 'choose-travelers' in final_url 
-                                 for success_url in success_urls)
-        
-        if should_select:
-            # First test: should succeed if URL matches success URLs
-            return {
-                "passed": url_matches_success,
-                "reason": f"URL {'matches' if url_matches_success else 'does not match'} success pattern - flight {'was' if url_matches_success else 'was not'} selected correctly",
-                "expected": "Flight selection (URL should contain 'choose-travelers')",
-                "actual": f"Final URL: {final_url}",
-                "final_url": final_url,
-                "url_matches_success": url_matches_success
-            }
+        # Both tests expect the recipe to be saved
+        if test_scenario == "first_test":
+            expected_message = "Click inside Save button (rating above 4.0 stars)"
         else:
-            # Second test: should succeed if URL does NOT match success URLs
+            expected_message = "Click inside Save button (5-star reviews are majority)"
+        
+        if not coordinates:
             return {
-                "passed": not url_matches_success,
-                "reason": f"URL {'matches' if url_matches_success else 'does not match'} success pattern - flight {'was incorrectly' if url_matches_success else 'was correctly not'} selected",
-                "expected": "No flight selection (URL should NOT contain 'choose-travelers')",
-                "actual": f"Final URL: {final_url}",
-                "final_url": final_url,
-                "url_matches_success": url_matches_success
+                "passed": False,
+                "reason": "No click action was performed",
+                "expected": expected_message,
+                "actual": "No click detected",
             }
-  
+
+        bbox = await self._get_save_button_bbox()
+        if not bbox:
+            return {
+                "passed": False,
+                "reason": "Could not locate Save button by selector",
+                "expected": expected_message,
+                "actual": f"Coordinates: {coordinates}",
+            }
+
+        x, y = coordinates
+        inside = self._is_inside(x, y, bbox)
+        return {
+            "passed": inside,
+            "reason": f"Click at ({x}, {y}) {'inside' if inside else 'outside'} Save button",
+            "expected": expected_message,
+            "actual": f"Click at ({x}, {y})",
+            "coordinates": coordinates,
+            "save_button_bbox": bbox,
+        }
+
     async def run_first_test(self, task_description: str) -> Dict[str, Any]:
-        """Run first test - agent should select the flight"""
-        print("Running first test (should select flight)...")
+        """Run first test - agent should save the recipe (rating above 4.0 stars)"""
+        print("Running first test (should save recipe - above 4.0 stars)...")
         
         # Run the agent with the URL
         result = await run_agent_test(self.url, task_description)
         
-        # Evaluate the result - expect flight selection
-        evaluation = self.evaluate_flight_selection(None, result, should_select=True)
+        # Evaluate the result - expect save button to be clicked
+        evaluation = await self.evaluate_should_save_recipe(result, "first_test")
         
         return {
             "test_name": "first_test",
-            "scenario": "should_select_flight",
+            "scenario": "should_save_recipe",
             "agent_result": result,
             "evaluation": evaluation,
             "passed": evaluation["passed"]
         }
         
     async def run_second_test(self, task_description: str) -> Dict[str, Any]:
-        """Run second test - agent should not select the flight"""
-        print("Running second test (should not select flight)...")
+        """Run second test - agent should save the recipe (5-star reviews are majority)"""
+        print("Running second test (should save recipe - 5-star reviews are majority)...")
         
         # Run the agent with the URL
         result = await run_agent_test(self.url, task_description)
         
-        # Evaluate the result - expect no flight selection
-        evaluation = self.evaluate_flight_selection(None, result, should_select=False)
+        # Evaluate the result - expect save button to be clicked
+        evaluation = await self.evaluate_should_save_recipe(result, "second_test")
         
         return {
             "test_name": "second_test", 
-            "scenario": "should_not_select_flight",
+            "scenario": "should_save_recipe",
             "agent_result": result,
             "evaluation": evaluation,
             "passed": evaluation["passed"]
@@ -108,7 +176,7 @@ class GoogleFlightsTimeDifferenceTest:
     
     async def run_both_tests(self, first_task_description: str, second_task_description: str) -> Dict[str, Any]:
         """Run both test scenarios"""
-        print("Starting Google Flights Time Difference Test Suite...")
+        print("Starting All Recipes Apple Pie Test Suite...")
         
         # Run both tests with their respective task descriptions
         first_test_result = await self.run_first_test(first_task_description)
@@ -193,10 +261,10 @@ class GoogleFlightsTimeDifferenceTest:
             print(f'Error creating visualization: {e}')
             return None
 
-async def test_gflight_time_difference():
+async def test_allrecipes_apple_pie():
     """Main test function that runs both scenarios"""
     
-    test_runner = GoogleFlightsTimeDifferenceTest()
+    test_runner = AllRecipesApplePieTest()
     results = await test_runner.run_both_tests(
         test_runner.first_task_description, 
         test_runner.second_task_description
@@ -204,7 +272,7 @@ async def test_gflight_time_difference():
     
     # Print detailed results
     print("\n" + "="*50)
-    print("GOOGLE FLIGHTS TIME DIFFERENCE TEST RESULTS")
+    print("ALL RECIPES APPLE PIE TEST RESULTS")
     print("="*50)
     
     for test_name, test_result in [("First Test", results["first_test"]), 
@@ -213,15 +281,15 @@ async def test_gflight_time_difference():
         print(f"  Status: {'PASSED' if test_result['passed'] else 'FAILED'}")
         print(f"  Reason: {test_result['evaluation']['reason']}")
         
-        # Display final URL information
-        final_url = test_result['evaluation'].get('final_url', 'Unknown')
-        print(f"  Final URL: {final_url}")
-        print(f"  URL matches success pattern: {test_result['evaluation'].get('url_matches_success', False)}")
+        # Display coordinate information
+        coordinates = test_result['evaluation'].get('coordinates', 'Unknown')
+        print(f"  Click coordinates: {coordinates}")
+        save_button_bbox = test_result['evaluation'].get('save_button_bbox', 'Unknown')
+        print(f"  Save button bbox: {save_button_bbox}")
         
         # Handle screenshot visualization if coordinates are available
         if test_result['agent_result'].get('last_coordinates'):
             x, y = test_result['agent_result']['last_coordinates']
-            print(f"  Click coordinates: ({x}, {y})")
             
             # Use screenshot_path from agent result if available
             screenshot_path = test_result['agent_result'].get('screenshot_path')
@@ -252,7 +320,7 @@ async def test_gflight_time_difference():
 async def main():
     """Main function to run the tests"""
     # Run the test and return results
-    results = await test_gflight_time_difference()
+    results = await test_allrecipes_apple_pie()
     return results
 
 if __name__ == "__main__":
