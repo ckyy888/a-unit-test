@@ -16,16 +16,7 @@ class BookingPriceCurrencyDisplayTest:
         self.first_url = "https://www.booking.com/hotel/gb/capsules-by-zedwell.en-gb.html?aid=336408&label=london-4ILnGvsrD%2AaMG1hpvTmXBQS650650528715%3Apl%3Ata%3Ap13060%3Ap2%3Aac%3Aap%3Aneg%3Afi%3Atikwd-12080521%3Alp9031967%3Ali%3Adec%3Adm%3Appccp%3DUmFuZG9tSVYkc2RlIyh9YavywThF4buZQ9k1iY7Jbs4&sid=35eda8675e10faa2560ef0124f7fe829&all_sr_blocks=1355922903_407898173_0_0_0&checkin=2026-01-01&checkout=2026-01-03&dest_id=-2601889&dest_type=city&dist=0&group_adults=1&group_children=0&hapos=1&highlighted_blocks=1355922903_407898173_0_0_0&hpos=1&matching_block_id=1355922903_407898173_0_0_0&no_rooms=1&req_adults=1&req_children=0&room1=A&sb_price_type=total&sr_order=popularity&sr_pri_blocks=1355922903_407898173_0_0_0__7425&srepoch=1756157921&srpvid=4f70982c0d8705cf&type=total&ucfs=1&"
         self.second_url = "https://www.booking.com/hotel/gb/capsules-by-zedwell.en-gb.html?aid=336408&label=london-4ILnGvsrD*aMG1hpvTmXBQS650650528715%3Apl%3Ata%3Ap13060%3Ap2%3Aac%3Aap%3Aneg%3Afi%3Atikwd-12080521%3Alp9031967%3Ali%3Adec%3Adm%3Appccp%3DUmFuZG9tSVYkc2RlIyh9YavywThF4buZQ9k1iY7Jbs4&sid=35eda8675e10faa2560ef0124f7fe829&all_sr_blocks=1355922903_407898173_0_0_0&checkin=2026-01-01&checkout=2026-01-03&dest_id=-2601889&dest_type=city&dist=0&group_adults=1&group_children=0&hapos=1&highlighted_blocks=1355922903_407898173_0_0_0&hpos=1&matching_block_id=1355922903_407898173_0_0_0&no_rooms=1&req_adults=1&req_children=0&room1=A&sb_price_type=total&sr_order=popularity&sr_pri_blocks=1355922903_407898173_0_0_0__7425&srepoch=1756157921&srpvid=4f70982c0d8705cf&type=total&ucfs=1&selected_currency=JPY"
 
-        self.first_task_description = (
-            """
-            You are a travel assistant. You are tasked with booking a room in the Zedwell Capsule Hotel Piccadilly Circus in London 
-            for your very particular American client, who will be staying for 2 nights from 2026-01-01 to 2026-01-03. 
-            Your client is willing to pay between 100 and 200 dollars in total.
-            You have found the hotel's booking page. You are on the hotel page and you are checking the price, about to
-            reserve the room.
-            """
-        )
-        self.second_task_description = (
+        self.task_description = (
             """
             You are a travel assistant. You are tasked with booking a room in the Zedwell Capsule Hotel Piccadilly Circus in London 
             for your very particular American client, who will be staying for 2 nights from 2026-01-01 to 2026-01-03. 
@@ -74,9 +65,9 @@ class BookingPriceCurrencyDisplayTest:
             "passed": evaluation["passed"],
         }
 
-    async def run_both_tests(self, first_task_description: str, second_task_description: str) -> Dict[str, Any]:
-        first_test_result = await self.run_first_test(first_task_description)
-        second_test_result = await self.run_second_test(second_task_description)
+    async def run_both_tests(self, task_description: str) -> Dict[str, Any]:
+        first_test_result = await self.run_first_test(task_description)
+        second_test_result = await self.run_second_test(task_description)
         overall_passed = first_test_result["passed"] and second_test_result["passed"]
         return {
             "overall_passed": overall_passed,
