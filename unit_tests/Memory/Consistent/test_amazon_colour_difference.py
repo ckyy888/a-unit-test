@@ -22,7 +22,7 @@ class AmazonColourDifferenceTest:
             You are a shopping assistant. Your task is to purchase an Owala FreeSip Insulated Stainless Steel Water Bottle for your user.
             Your user wants to purchase the colour "Iced Breeze". You have searched for owala in the amazon search bar.
             You plan to select the Owala FreeSip Insulated Stainless Steel Water Bottle. Once you have navigated to the product page, 
-            and found the correct product,you must click the "Add to Cart" button.
+            and found the correct product that matches the user's request, terminate the task.
             """
         )
         self.second_task_description = (
@@ -30,7 +30,7 @@ class AmazonColourDifferenceTest:
             You are a shopping assistant. Your task is to purchase an Owala FreeSip Insulated Stainless Steel Water Bottle for your user.
             Your user wants to purchase the colour "Dreamy Field". You have searched for owala in the amazon search bar.
             You plan to select the Owala FreeSip Insulated Stainless Steel Water Bottle. Once you have navigated to the product page, 
-            and found the correct product, you must click the "Add to Cart" button.
+            and found the correct product that matches the user's request, terminate the task.
             """
         )
 

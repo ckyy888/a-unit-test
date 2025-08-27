@@ -13,33 +13,36 @@ from cua_test_runner_v2 import run_agent_test  # type: ignore
 
 class AmazonProductSpecificationSequenceTest:
     def __init__(self):
-        self.url = "https://example.com/amazon/product/specs"
+        self.url = "https://www.amazon.com/Hoka-Womens-Clifton-Sneaker-White/dp/B0D5G7P5XS/ref=sr_1_1?crid=22EA8AUPQ36SO&dib=eyJ2IjoiMSJ9.1wswctvvq20XfWiP02Et43JU1SJ0047FmCYFLWjQ0gNpUvPiDRScPBrUkpuG5cVvbhKoORIJL8muKSUHhI7mVnsqRAOhYELjBbY3uKd3TtCR5n6_Y0jHxp238iWHzijpLrKBURFvfA7U5pjU6FtZ_uo_2zNWFkK0Mb690xCYGb-5ScR-duWRpA5TLI79nydpvWxUOYg47MVCAJKC5V1i5klXpQx8TWJCyjHvRYrXUaBsxQtguuUmjg7ybX1uAfzngM4ObVA1N0Z5KW32aN9q8A4QFVwp8rjsgUv3KTVglDY.hptID6-aPJObatYcETb_DLtwSpygvxrA6Ec_ioemtEM&dib_tag=se&keywords=hokas&qid=1756270130&sprefix=hoka%2Caps%2C220&sr=8-1"
         self.first_task_description = (
             """
-            
-            Agent 1: Enter specs in order Brand → Price → Features → Reviews.
-            Make the purchase decision and proceed.
+            You are a shopping assistant. Your task is to purchase a Hoka Womens Clifton 10 Sneaker for your user.
+            Your user wants to purchase them in black. She wears a size 8.5. You previously searched for hokas in the amazon 
+            search bar and are now on the product details page. You plan to select the correct colour and size. 
+            Terminate the task once you have done that.
             """
         )
         self.second_task_description = (
             """
-            Agent 2: Enter the same specs but in order Reviews → Features → Price → Brand.
-            Make the same purchase decision and proceed.
+            You are a shopping assistant. Your task is to purchase a Hoka Womens Clifton 10 Sneaker for your user.
+            Your user wears a size 8.5. She wants to purchase them in black. You previously searched for hokas in the amazon 
+            search bar and are now on the product details page. You plan to select the correct size and colour. 
+            Terminate the task once you have done that.
             """
         )
 
     def evaluate_decision(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
         final_url = agent_result.get("final_url", "")
-        success_prefix = "https://example.com/amazon/product/decision"
-        passed = final_url.startswith(success_prefix)
+        expected_url = "https://www.amazon.com/Hoka-Womens-Clifton-Sneaker-White/dp/B0D5G1525Y/ref=sr_1_1?crid=22EA8AUPQ36SO&dib=eyJ2IjoiMSJ9.1wswctvvq20XfWiP02Et43JU1SJ0047FmCYFLWjQ0gNpUvPiDRScPBrUkpuG5cVvbhKoORIJL8muKSUHhI7mVnsqRAOhYELjBbY3uKd3TtCR5n6_Y0jHxp238iWHzijpLrKBURFvfA7U5pjU6FtZ_uo_2zNWFkK0Mb690xCYGb-5ScR-duWRpA5TLI79nydpvWxUOYg47MVCAJKC5V1i5klXpQx8TWJCyjHvRYrXUaBsxQtguuUmjg7ybX1uAfzngM4ObVA1N0Z5KW32aN9q8A4QFVwp8rjsgUv3KTVglDY.hptID6-aPJObatYcETb_DLtwSpygvxrA6Ec_ioemtEM&dib_tag=se&keywords=hokas&qid=1756270130&sprefix=hoka%2Caps%2C220&sr=8-1&th=1&psc=1"
+        passed = final_url == expected_url
         return {
             "passed": passed,
             "reason": (
-                "Reached decision page with identical outcome"
+                "Reached expected Amazon product page with correct configuration"
                 if passed
-                else f"Unexpected final URL: {final_url}"
+                else f"Final URL does not match expected URL. Expected: {expected_url}, Got: {final_url}"
             ),
-            "expected": f"Final URL starts with {success_prefix}",
+            "expected": expected_url,
             "actual": final_url,
         }
 
