@@ -13,19 +13,18 @@ load_dotenv()
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 from cua_test_runner import run_agent_test
 
-# Define dummy coordinates for password input box and next button
 PASSWORD_INPUT_BBOX = {
-    "x": 773,
-    "y": 337,
-    "width": 483,
-    "height": 40,
+    "x": 1519,
+    "y": 664,
+    "width": 948,
+    "height": 112,
 }
 
 NEXT_BUTTON_BBOX = {
-    "x": 1201,
-    "y": 492,
-    "width": 55,
-    "height": 40,
+    "x": 2308,
+    "y": 967,
+    "width": 159,
+    "height": 79,
 }
 
 class GmailPasswordDifferenceTest:
