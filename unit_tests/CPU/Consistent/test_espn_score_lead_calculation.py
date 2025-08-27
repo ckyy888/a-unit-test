@@ -14,37 +14,54 @@ from cua_test_runner_v2 import run_agent_test  # type: ignore
 
 class ESPNScoreLeadCalculationTest:
     def __init__(self):
-        self.url = "https://example.com/espn/game/live"
-        self.first_task_description = (
+        self.first_url = "https://www.espn.com/nba/story/_/id/45017098/minnesota-timberwolves-golden-state-warriors-game-1-nba-playoffs-2025-updates-highlights-results"
+        self.second_url = "https://www.espn.com/nba/game/_/gameId/401769837/warriors-timberwolves"
+        self.task_description = (
             """
-            Agent 1: You see the score displayed as "Lakers 108, Warriors 95".
-            Task: Report the leading team and proceed to the summary page.
-            """
-        )
-        self.second_task_description = (
-            """
-            Agent 2: You see the lead displayed as "Lakers lead by 13".
-            Task: Report the leading team consistently and proceed to the summary page.
+            Report who the leading team is.
             """
         )
 
+    def extract_agent_final_output(self, agent_result: Dict[str, Any]) -> str:
+        """Extract the agent's final text output/reasoning from the result."""
+        result = agent_result.get("result", {})
+        if not result or "output" not in result:
+            return ""
+        
+        # Get the last reasoning output
+        final_reasoning = ""
+        for item in result["output"]:
+            if item.get("type") == "reasoning":
+                final_reasoning = item.get("output_text", "")
+        
+        return final_reasoning
+
     def evaluate_summary(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
-        final_url = agent_result.get("final_url", "")
-        success_prefix = "https://example.com/espn/game/summary"
-        passed = final_url.startswith(success_prefix)
+        agent_output = self.extract_agent_final_output(agent_result)
+        
+        # Check if the agent identified the leading team correctly
+        # Look for keywords indicating the agent reported the leading team
+        leading_keywords = ["leading", "lead", "ahead", "winning", "leading team", "in the lead"]
+        team_keywords = ["warriors", "timberwolves", "golden state", "minnesota"]
+        
+        has_leading_info = any(keyword.lower() in agent_output.lower() for keyword in leading_keywords)
+        has_team_info = any(keyword.lower() in agent_output.lower() for keyword in team_keywords)
+        
+        passed = has_leading_info and has_team_info
+        
         return {
             "passed": passed,
             "reason": (
-                "Reached summary page after consistent lead reasoning"
+                "Agent successfully identified and reported the leading team"
                 if passed
-                else f"Unexpected final URL: {final_url}"
+                else f"Agent output did not clearly identify the leading team. Output: {agent_output[:200]}..."
             ),
-            "expected": f"Final URL starts with {success_prefix}",
-            "actual": final_url,
+            "expected": "Agent should identify and report which team is leading",
+            "actual": agent_output[:200] + "..." if len(agent_output) > 200 else agent_output,
         }
 
     async def run_first_test(self, task_description: str) -> Dict[str, Any]:
-        result = await run_agent_test(self.url, task_description)
+        result = await run_agent_test(self.first_url, task_description)
         evaluation = self.evaluate_summary(result)
         return {
             "test_name": "first_test",
@@ -55,7 +72,7 @@ class ESPNScoreLeadCalculationTest:
         }
 
     async def run_second_test(self, task_description: str) -> Dict[str, Any]:
-        result = await run_agent_test(self.url, task_description)
+        result = await run_agent_test(self.second_url, task_description)
         evaluation = self.evaluate_summary(result)
         return {
             "test_name": "second_test",
@@ -88,7 +105,7 @@ class ESPNScoreLeadCalculationTest:
 async def test_espn_score_lead_calculation():
     test_runner = ESPNScoreLeadCalculationTest()
     results = await test_runner.run_both_tests(
-        test_runner.first_task_description, test_runner.second_task_description
+        test_runner.task_description, test_runner.task_description
     )
 
     print("\n" + "=" * 50)

@@ -16,6 +16,7 @@ class AmazonProductSpecificationSequenceTest:
         self.url = "https://example.com/amazon/product/specs"
         self.first_task_description = (
             """
+            
             Agent 1: Enter specs in order Brand → Price → Features → Reviews.
             Make the purchase decision and proceed.
             """
