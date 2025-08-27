@@ -11,12 +11,16 @@ class AgentTestTracker:
         self.last_action = None
         self.last_coordinates = None
         self.should_terminate = False
+        self.typed_text = ""
+        self.typing_count = 0
     
     def reset(self):
         """Reset all tracking state"""
         self.last_action = None
         self.last_coordinates = None
         self.should_terminate = False
+        self.typed_text = ""
+        self.typing_count = 0
 
 def screenshot_wrapper(screenshot_func):
     """Wrapper to handle both sync and async screenshot functions"""
@@ -115,12 +119,20 @@ async def run_agent_test(screenshot_func, task_description: str) -> Dict[str, An
         tracker.last_coordinates = (pixel_x, pixel_y)
         return None
     
+    def type_handler(text):
+        tracker.last_action = 'type'
+        tracker.typed_text += text
+        tracker.typing_count += len(text)
+        print(f"Typed: '{text}' (total typed: '{tracker.typed_text}', count: {tracker.typing_count})")
+        return None
+    
     # Create dict-based computer handler
     custom_computer = {
         'screenshot': wrapped_screenshot,
         'dimensions': (2940, 1596),
         'click': click_handler,
         'move': move_handler,
+        'type': type_handler,
         'wait': lambda ms=1000: print(f"Waiting {ms}ms")
     }
     
@@ -136,7 +148,9 @@ async def run_agent_test(screenshot_func, task_description: str) -> Dict[str, An
             'success': False,
             'error': f"Agent creation failed: {str(e)}",
             'last_action': tracker.last_action,
-            'last_coordinates': tracker.last_coordinates
+            'last_coordinates': tracker.last_coordinates,
+            'typed_text': tracker.typed_text,
+            'typing_count': tracker.typing_count
         }
     
     print(f"Starting agent with task: {task_description}")
@@ -165,11 +179,14 @@ async def run_agent_test(screenshot_func, task_description: str) -> Dict[str, An
                 break
         
         print(f"Agent completed. Last action: {tracker.last_action}, Last coordinates: {tracker.last_coordinates}")
+        print(f"Typed text: '{tracker.typed_text}', Typing count: {tracker.typing_count}")
         return {
             'success': True,
             'result': final_result,
             'last_action': tracker.last_action,
-            'last_coordinates': tracker.last_coordinates
+            'last_coordinates': tracker.last_coordinates,
+            'typed_text': tracker.typed_text,
+            'typing_count': tracker.typing_count
         }
     except Exception as e:
         print(f"Agent failed with error: {e}")
@@ -179,5 +196,7 @@ async def run_agent_test(screenshot_func, task_description: str) -> Dict[str, An
             'success': False,
             'error': str(e),
             'last_action': tracker.last_action,
-            'last_coordinates': tracker.last_coordinates
+            'last_coordinates': tracker.last_coordinates,
+            'typed_text': tracker.typed_text,
+            'typing_count': tracker.typing_count
         }

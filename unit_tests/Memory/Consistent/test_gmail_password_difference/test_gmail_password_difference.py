@@ -1,58 +1,70 @@
-
 import asyncio
 import os
 import base64
 import io
 from PIL import Image, ImageDraw, ImageFont
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict, Any, Optional
 import sys
 from dotenv import load_dotenv
 import urllib.parse
-from typing import Any, Dict, Optional
 
 load_dotenv()
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 from cua_test_runner import run_agent_test
 
-ADD_TO_CART_BBOX = {
-    "x": 2452,
-    "y": 650,
-    "width": 416,
-    "height": 63,
+# Define dummy coordinates for password input box and next button
+PASSWORD_INPUT_BBOX = {
+    "x": 773,
+    "y": 337,
+    "width": 483,
+    "height": 40,
 }
 
-BUY_NOW_BBOX = {
-    "x": 2453,
-    "y": 730,
-    "width": 416,
-    "height": 63,
+NEXT_BUTTON_BBOX = {
+    "x": 1201,
+    "y": 492,
+    "width": 55,
+    "height": 40,
 }
 
-class AmazonPriceDifferenceTest:
+class GmailPasswordDifferenceTest:
     def __init__(self):
         self.screenshots_dir = os.path.join(os.path.dirname(__file__), 'screenshots')
-        self.small_screenshot_path = os.path.join(self.screenshots_dir, 'amazon_small.png')
-        self.big_screenshot_path = os.path.join(self.screenshots_dir, 'amazon_big.png')
+        self.gmail1_path = os.path.join(self.screenshots_dir, 'gmail1.png')
+        self.gmail2_path = os.path.join(self.screenshots_dir, 'gmail2.png')
+        self.gmail3_path = os.path.join(self.screenshots_dir, 'gmail3.png')
+        self.gmail4_path = os.path.join(self.screenshots_dir, 'gmail4.png')
+        
+        # State tracking for progressive screenshot feeding
+        self.current_screenshot_stage = 1
+        self.password_input_clicked = False
+        self.typing_count = 0
+        self.expected_password = ""
+        
+    def reset_state(self):
+        """Reset test state for a new test run"""
+        self.current_screenshot_stage = 1
+        self.password_input_clicked = False
+        self.typing_count = 0
     
-    def get_small_screenshot(self):
+    def get_progressive_screenshot(self):
+        """Return the appropriate screenshot based on current state"""
+        screenshot_paths = {
+            1: self.gmail1_path,
+            2: self.gmail2_path,
+            3: self.gmail3_path,
+            4: self.gmail4_path
+        }
+        
+        screenshot_path = screenshot_paths.get(self.current_screenshot_stage, self.gmail1_path)
+        print(f"Returning screenshot stage {self.current_screenshot_stage}: {os.path.basename(screenshot_path)}")
+        
         try:
-            # Open image and return PIL Image object (what agent might expect)
-            img = Image.open(self.small_screenshot_path)
+            img = Image.open(screenshot_path)
             return img
         except Exception as e:
-            print(f"Error loading small screenshot: {e}")
-            # Return a dummy image if file not found
-            return Image.new('RGB', (1920, 1080), color='white')
-    
-    def get_big_screenshot(self):
-        try:
-            # Open image and return PIL Image object (what agent might expect)
-            img = Image.open(self.big_screenshot_path)
-            return img
-        except Exception as e:
-            print(f"Error loading big screenshot: {e}")
-            # Return a dummy image if file not found
+            print(f"Error loading screenshot {screenshot_path}: {e}")
             return Image.new('RGB', (1920, 1080), color='white')
     
     def is_point_inside_bbox(self, x: int, y: int, bbox: Dict[str, float]) -> bool:
@@ -63,248 +75,349 @@ class AmazonPriceDifferenceTest:
         bottom = bbox["y"] + bbox["height"]
         return (left <= x <= right and top <= y <= bottom)
     
-    def is_click_in_target_buttons(self, x: int, y: int) -> bool:
-        """Check if click is inside either Add to Cart or Buy Now buttons"""
-        return (self.is_point_inside_bbox(x, y, ADD_TO_CART_BBOX) or 
-                self.is_point_inside_bbox(x, y, BUY_NOW_BBOX))
+    def is_click_in_password_input(self, x: int, y: int) -> bool:
+        """Check if click is inside password input box"""
+        return self.is_point_inside_bbox(x, y, PASSWORD_INPUT_BBOX)
     
-    def evaluate_click_inside_target(self, coordinates: Tuple[int, int]) -> Dict[str, Any]:
-        """Evaluate if the click is inside the target buttons (for small screenshot test)"""
-        if coordinates is None:
-            return {
-                "passed": False,
-                "reason": "No click action was performed",
-                "expected": "Click inside Add to Cart or Buy Now buttons",
-                "actual": "No click detected"
-            }
+    def is_click_in_next_button(self, x: int, y: int) -> bool:
+        """Check if click is inside next button"""
+        return self.is_point_inside_bbox(x, y, NEXT_BUTTON_BBOX)
+    
+    def evaluate_password_test(self, agent_result: Dict[str, Any], expected_password: str) -> Dict[str, Any]:
+        """Evaluate if the agent successfully entered the correct password and clicked next"""
+        typed_text = agent_result.get('typed_text', '')
+        last_coordinates = agent_result.get('last_coordinates')
         
-        x, y = coordinates
-        is_inside = self.is_click_in_target_buttons(x, y)
+        # Check if password was typed correctly
+        password_correct = typed_text.strip() == expected_password
+        
+        # Check if final click was on next button (and agent reached gmail4.png stage)
+        next_button_clicked = False
+        if last_coordinates:
+            x, y = last_coordinates
+            next_button_clicked = self.is_click_in_next_button(x, y)
+        
+        # Agent passes only if they typed correct password AND clicked next on gmail4.png
+        # AND reached the final screenshot stage (meaning they typed 3 characters)
+        passed = (password_correct and 
+                 next_button_clicked and 
+                 self.current_screenshot_stage == 4)
         
         return {
-            "passed": is_inside,
-            "reason": f"Click at ({x}, {y}) {'inside' if is_inside else 'outside'} target buttons",
-            "expected": "Click inside Add to Cart or Buy Now buttons",
-            "actual": f"Click at ({x}, {y})",
-            "coordinates": coordinates,
-            "add_to_cart_bbox": ADD_TO_CART_BBOX,
-            "buy_now_bbox": BUY_NOW_BBOX
+            "passed": passed,
+            "password_correct": password_correct,
+            "next_button_clicked": next_button_clicked,
+            "final_screenshot_stage": self.current_screenshot_stage,
+            "typed_password": typed_text,
+            "expected_password": expected_password,
+            "last_click_coordinates": last_coordinates,
+            "reason": self._get_failure_reason(password_correct, next_button_clicked, self.current_screenshot_stage)
         }
     
-    def evaluate_click_outside_target(self, coordinates: Tuple[int, int]) -> Dict[str, Any]:
-        """Evaluate if the click is outside the target buttons (for big screenshot test)"""
-        if coordinates is None:
-            return {
-                "passed": True,  # No click is acceptable for this test
-                "reason": "No click action was performed (acceptable for this test)",
-                "expected": "Click outside Add to Cart or Buy Now buttons, or no click",
-                "actual": "No click detected"
-            }
+    def _get_failure_reason(self, password_correct: bool, next_button_clicked: bool, final_stage: int) -> str:
+        """Get detailed reason for test failure or success"""
+        if password_correct and next_button_clicked and final_stage == 4:
+            return "Test passed: Correct password typed and next button clicked on final screen"
         
-        x, y = coordinates
-        is_inside = self.is_click_in_target_buttons(x, y)
+        reasons = []
+        if not password_correct:
+            reasons.append("incorrect password typed")
+        if not next_button_clicked:
+            reasons.append("next button not clicked")
+        if final_stage != 4:
+            reasons.append(f"did not reach final screenshot stage (reached stage {final_stage})")
         
-        return {
-            "passed": not is_inside,
-            "reason": f"Click at ({x}, {y}) {'inside' if is_inside else 'outside'} target buttons",
-            "expected": "Click outside Add to Cart or Buy Now buttons",
-            "actual": f"Click at ({x}, {y})",
-            "coordinates": coordinates,
-            "add_to_cart_bbox": ADD_TO_CART_BBOX,
-            "buy_now_bbox": BUY_NOW_BBOX
-        }
-    
-    async def run_small_screenshot_test(self, task_description: str) -> Dict[str, Any]:
-        """Run test with small screenshot - agent should click inside target buttons"""
-        print("Running test with small screenshot...")
+        return f"Test failed: {', '.join(reasons)}"
+
+    async def run_password_test(self, expected_password: str, task_description: str) -> Dict[str, Any]:
+        """Run a single password test with progressive screenshot feeding"""
         
-        # Run the agent with small screenshot
-        result = await run_agent_test(self.get_small_screenshot, task_description)
+        self.reset_state()
+        self.expected_password = expected_password
         
-        # Evaluate the result
-        evaluation = self.evaluate_click_inside_target(result.get('last_coordinates'))
+        # Create a custom screenshot function that tracks state and returns progressive screenshots
+        def progressive_screenshot_func():
+            return self.get_progressive_screenshot()
         
-        return {
-            "test_name": "small_screenshot_test",
-            "screenshot_type": "small",
-            "agent_result": result,
-            "evaluation": evaluation,
-            "passed": evaluation["passed"]
-        }
-    
-    async def run_big_screenshot_test(self, task_description: str) -> Dict[str, Any]:
-        """Run test with big screenshot - agent should click outside target buttons"""
-        print("Running test with big screenshot...")
+        # We need to override the run_agent_test behavior to handle progressive feeding
+        # But we'll do it by creating a custom screenshot function that responds to agent actions
         
-        # Run the agent with big screenshot
-        result = await run_agent_test(self.get_big_screenshot, task_description)
+        # Import what we need from cua_test_runner
+        from cua_test_runner import AgentTestTracker, screenshot_wrapper
+        from agent import ComputerAgent
         
-        # Evaluate the result
-        evaluation = self.evaluate_click_outside_target(result.get('last_coordinates'))
+        # Create tracker instance for this test run
+        tracker = AgentTestTracker()
         
-        return {
-            "test_name": "big_screenshot_test", 
-            "screenshot_type": "big",
-            "agent_result": result,
-            "evaluation": evaluation,
-            "passed": evaluation["passed"]
-        }
-    
-    async def run_both_tests(self, task_description: str) -> Dict[str, Any]:
-        """Run both test scenarios"""
-        print("Starting Amazon Price Difference Test Suite...")
+        # Create wrapped screenshot function
+        wrapped_screenshot = screenshot_wrapper(progressive_screenshot_func)
         
-        # Run both tests
-        small_test_result = await self.run_small_screenshot_test(task_description)
-        big_test_result = await self.run_big_screenshot_test(task_description)
-        
-        # Overall results
-        overall_passed = small_test_result["passed"] and big_test_result["passed"]
-        
-        results = {
-            "overall_passed": overall_passed,
-            "small_screenshot_test": small_test_result,
-            "big_screenshot_test": big_test_result,
-            "summary": {
-                "small_test_passed": small_test_result["passed"],
-                "big_test_passed": big_test_result["passed"],
-                "total_tests": 2,
-                "passed_tests": sum([small_test_result["passed"], big_test_result["passed"]])
-            }
-        }
-        
-        return results
-    
-    def visualize_prediction(
-        self,
-        image_path: str,
-        pred_x: Optional[int],
-        pred_y: Optional[int],
-        run_id: Optional[str],
-        gt_x1: Optional[int],
-        gt_y1: Optional[int],
-        gt_x2: Optional[int],
-        gt_y2: Optional[int],
-        is_in_bbox: Optional[bool] = None,
-    ) -> Optional[str]:
-        try:
-            base_dir = os.path.dirname(
-                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            )
-            if run_id:
-                vis_dir = os.path.join(base_dir, 'results', run_id, 'visualizations')
+        def click_handler(x, y, button='left'):
+            tracker.last_action = 'click'
+            
+            # Convert normalized coordinates (0-1) to pixel coordinates
+            screen_width, screen_height = 2940, 1596
+            
+            # Handle both normalized and pixel coordinates
+            if 0 <= x <= 1 and 0 <= y <= 1:
+                # Input is normalized, convert to pixels
+                pixel_x = int(x * screen_width)
+                pixel_y = int(y * screen_height)
+                print(f"Converted normalized ({x:.3f}, {y:.3f}) to pixel ({pixel_x}, {pixel_y})")
             else:
-                vis_dir = os.path.join(base_dir, 'visualizations')
-            os.makedirs(vis_dir, exist_ok=True)
-            print(f'Visualization directory: {vis_dir}')
-
-            img = Image.open(image_path)
-            draw = ImageDraw.Draw(img)
-
-            try:
-                font = ImageFont.truetype('Arial.ttf', 16)
-            except IOError:
-                font = ImageFont.load_default()
-
-            image_filename = os.path.basename(image_path)
-
-            # Draw the bounding box if available
-            if all(v is not None for v in [gt_x1, gt_y1, gt_x2, gt_y2]):
-                draw.rectangle([(gt_x1, gt_y1), (gt_x2, gt_y2)], outline='blue', width=2)  # type: ignore
-                if gt_y1 is not None:
-                    draw.text((gt_x1, gt_y1 - 20), 'Bounding Box', fill='blue', font=font)  # type: ignore
+                # Input is in pixels - scale from agent's assumed 1440x800 to actual 2940x1596
+                scale_x = 2940 / 1440  # 2.042
+                scale_y = 1596 / 800   # 1.995
+                pixel_x = int(x * scale_x)
+                pixel_y = int(y * scale_y)
+                print(f"Scaled coordinates: ({x}, {y}) -> ({pixel_x}, {pixel_y})")
+            
+            # If click coordinates are (0, 0), it might mean click at current position
+            if pixel_x == 0 and pixel_y == 0 and tracker.last_coordinates is not None:
+                print(f"Click at (0, 0) detected - using current mouse position")
+                print(f"Current mouse position from last move: {tracker.last_coordinates}")
+                # Keep the move coordinates as the effective click location
+                effective_coords = tracker.last_coordinates
+            else:
+                # Update to the explicit click coordinates
+                tracker.last_coordinates = (pixel_x, pixel_y)
+                effective_coords = (pixel_x, pixel_y)
+            
+            print(f"Final click coordinates: {effective_coords}")
+            
+            # Check if click is in password input box
+            if self.is_click_in_password_input(effective_coords[0], effective_coords[1]):
+                print("Click detected in password input box!")
+                self.password_input_clicked = True
+                # Stay on gmail1.png when password input is clicked - don't advance stage
+            elif self.is_click_in_next_button(effective_coords[0], effective_coords[1]):
+                print("Click detected on next button!")
+                # Only terminate if we're on the final screenshot and password is correct
+                if self.current_screenshot_stage == 4 and tracker.typed_text.strip() == expected_password:
+                    tracker.should_terminate = True
+                    print("Setting termination flag - correct password and next button clicked on final screen")
                 else:
-                    draw.text((gt_x1, 0), 'Bounding Box', fill='blue', font=font)  # type: ignore
-
-            if pred_x is not None and pred_y is not None:
-                # Different color based on whether it's in bbox or not
-                outline_color = 'orange' if is_in_bbox else 'red'
-                draw.ellipse(
-                    [(pred_x - 15, pred_y - 15), (pred_x + 15, pred_y + 15)], outline=outline_color, width=3
-                )
-                draw.text((pred_x + 20, pred_y + 30), 'Click', fill=outline_color, font=font)
-
-            output_filename = f'rec1.png'
-            if is_in_bbox:
-                output_dir = os.path.join(vis_dir, 'correct')
+                    print(f"Next button clicked but conditions not met: stage={self.current_screenshot_stage}, typed='{tracker.typed_text}', expected='{expected_password}'")
             else:
-                output_dir = os.path.join(vis_dir, 'incorrect')
-            os.makedirs(output_dir, exist_ok=True)
-            output_path = os.path.join(output_dir, output_filename)
-            img.save(output_path)
-
-            return output_path
-        except Exception as e:
-            print(f'Error creating visualization: {e}')
+                # For other clicks, set termination flag after any click (default behavior)
+                tracker.should_terminate = True
+                print("Setting termination flag after click")
+            
             return None
+        
+        def move_handler(x, y):
+            # Convert normalized coordinates (0-1) to pixel coordinates
+            screen_width, screen_height = 2940, 1596
+            
+            # Handle both normalized and pixel coordinates
+            if 0 <= x <= 1 and 0 <= y <= 1:
+                # Input is normalized, convert to pixels
+                pixel_x = int(x * screen_width)
+                pixel_y = int(y * screen_height)
+                print(f"Move: Converted normalized ({x:.3f}, {y:.3f}) to pixel ({pixel_x}, {pixel_y})")
+            else:
+                # Input is in pixels - scale from agent's assumed 1440x800 to actual 2940x1596
+                scale_x = 2940 / 1440  # 2.042
+                scale_y = 1596 / 800   # 1.995
+                pixel_x = int(x * scale_x)
+                pixel_y = int(y * scale_y)
+                print(f"Move: Scaled coordinates: ({x}, {y}) -> ({pixel_x}, {pixel_y})")
+            
+            tracker.last_coordinates = (pixel_x, pixel_y)
+            return None
+        
+        def type_handler(text):
+            tracker.last_action = 'type'
+            tracker.typed_text += text
+            tracker.typing_count += len(text)
+            print(f"Typed: '{text}' (total typed: '{tracker.typed_text}', count: {tracker.typing_count})")
+            
+            # Advance screenshot stage based on typing count, but only if password input was clicked
+            if self.password_input_clicked:
+                if len(tracker.typed_text) == 1 and self.current_screenshot_stage == 1:
+                    self.current_screenshot_stage = 2
+                    print("Advanced to screenshot stage 2 (gmail2.png)")
+                elif len(tracker.typed_text) == 2 and self.current_screenshot_stage == 2:
+                    self.current_screenshot_stage = 3
+                    print("Advanced to screenshot stage 3 (gmail3.png)")
+                elif len(tracker.typed_text) == 3 and self.current_screenshot_stage == 3:
+                    self.current_screenshot_stage = 4
+                    print("Advanced to screenshot stage 4 (gmail4.png)")
+            
+            return None
+        
+        # Create dict-based computer handler
+        custom_computer = {
+            'screenshot': wrapped_screenshot,
+            'dimensions': (2940, 1596),
+            'click': click_handler,
+            'move': move_handler,
+            'type': type_handler,
+            'wait': lambda ms=1000: print(f"Waiting {ms}ms")
+        }
+        
+        # Create agent
+        try:
+            agent = ComputerAgent(
+                model="claude-3-5-sonnet-20241022",
+                tools=[custom_computer]
+            )
+        except Exception as e:
+            print(f"Error creating agent: {e}")
+            return {
+                'success': False,
+                'error': f"Agent creation failed: {str(e)}",
+                'last_action': tracker.last_action,
+                'last_coordinates': tracker.last_coordinates,
+                'typed_text': tracker.typed_text,
+                'typing_count': tracker.typing_count
+            }
+        
+        print(f"Starting Gmail password test with expected password: '{expected_password}'")
+        print(f"Task description: {task_description}")
+        
+        # Run agent
+        try:
+            print("Running agent...")
+            messages = [{"role": "user", "content": task_description}]
+            
+            # Collect all results from the async generator
+            final_result = None
+            async for result in agent.run(messages):
+                final_result = result
+                
+                # Check if we should terminate after processing this result
+                if tracker.should_terminate:
+                    print("Terminating trajectory")
+                    break
+            
+            print(f"Agent completed. Last action: {tracker.last_action}, Last coordinates: {tracker.last_coordinates}")
+            print(f"Typed text: '{tracker.typed_text}', Final screenshot stage: {self.current_screenshot_stage}")
+            
+            return {
+                'success': True,
+                'result': final_result,
+                'last_action': tracker.last_action,
+                'last_coordinates': tracker.last_coordinates,
+                'typed_text': tracker.typed_text,
+                'typing_count': tracker.typing_count
+            }
+        except Exception as e:
+            print(f"Agent failed with error: {e}")
+            import traceback
+            print(f"Full traceback: {traceback.format_exc()}")
+            return {
+                'success': False,
+                'error': str(e),
+                'last_action': tracker.last_action,
+                'last_coordinates': tracker.last_coordinates,
+                'typed_text': tracker.typed_text,
+                'typing_count': tracker.typing_count
+            }
 
-async def test_amazon_price_difference():
-    """Main test function that runs both scenarios"""
-    task_description = """
-    You are an AI assistant controlling a computer to interact with an Amazon product page.
+async def test_gmail_password_difference():
+    """Main test function that runs both password scenarios"""
+    
+    # Create test instance
+    test_runner = GmailPasswordDifferenceTest()
+    
+    # Test 1: Password "abc"
+    print("\n" + "="*60)
+    print("GMAIL PASSWORD TEST 1: Password 'abc'")
+    print("="*60)
+    
+    task_description_abc = """
+    You are an AI assistant helping to log into a Gmail account.
     The screen resolution is 2940x1596.
     
-    TASK: Purchase the item ONLY if the price is under $15.
+    TASK: Log in to Gmail with the password "abc"
     
     INSTRUCTIONS:
-    1. First, take a screenshot to see the current page
-    2. Look for the price of the item on the page (usually shown as $XX.XX)
-    3. If the price is under $15.00:
-       - Click on the yellow "Add to Cart" button OR the orange "Buy Now" button
-    4. If the price is $15.00 or higher:
-       - Do NOT click on any purchase buttons
-       - Do NOT take any action
+    1. Take a screenshot to see the current login page
+    2. Click on the password input field
+    3. Type the password "abc" (one character at a time)
+    4. Click the "Next" button to proceed
     
     You have access to computer control functions including screenshot, click, type, scroll, and move.
-    Start by taking a screenshot to see what's on the page.
+    Start by taking a screenshot to see the current page.
     """
     
-    test_runner = AmazonPriceDifferenceTest()
-    results = await test_runner.run_both_tests(task_description)
+    result_abc = await test_runner.run_password_test("abc", task_description_abc)
+    evaluation_abc = test_runner.evaluate_password_test(result_abc, "abc")
+    
+    # Test 2: Password "xyz"
+    print("\n" + "="*60)
+    print("GMAIL PASSWORD TEST 2: Password 'xyz'")
+    print("="*60)
+    
+    task_description_xyz = """
+    You are an AI assistant helping to log into a Gmail account.
+    The screen resolution is 2940x1596.
+    
+    TASK: Log in to Gmail with the password "xyz"
+    
+    INSTRUCTIONS:
+    1. Take a screenshot to see the current login page
+    2. Click on the password input field
+    3. Type the password "xyz" (one character at a time)
+    4. Click the "Next" button to proceed
+    
+    You have access to computer control functions including screenshot, click, type, scroll, and move.
+    Start by taking a screenshot to see the current page.
+    """
+    
+    result_xyz = await test_runner.run_password_test("xyz", task_description_xyz)
+    evaluation_xyz = test_runner.evaluate_password_test(result_xyz, "xyz")
+    
+    # Compile results
+    results = {
+        "overall_passed": evaluation_abc["passed"] and evaluation_xyz["passed"],
+        "abc_test": {
+            "passed": evaluation_abc["passed"],
+            "agent_result": result_abc,
+            "evaluation": evaluation_abc
+        },
+        "xyz_test": {
+            "passed": evaluation_xyz["passed"],
+            "agent_result": result_xyz,
+            "evaluation": evaluation_xyz
+        },
+        "summary": {
+            "abc_test_passed": evaluation_abc["passed"],
+            "xyz_test_passed": evaluation_xyz["passed"],
+            "total_tests": 2,
+            "passed_tests": sum([evaluation_abc["passed"], evaluation_xyz["passed"]])
+        }
+    }
     
     # Print detailed results
-    print("\n" + "="*50)
-    print("AMAZON PRICE DIFFERENCE TEST RESULTS")
-    print("="*50)
+    print("\n" + "="*60)
+    print("GMAIL PASSWORD DIFFERENCE TEST RESULTS")
+    print("="*60)
     
-    for test_name, test_result in [("Small Screenshot", results["small_screenshot_test"]), 
-                                   ("Big Screenshot", results["big_screenshot_test"])]:
+    for test_name, test_data in [("ABC Password", results["abc_test"]), 
+                                ("XYZ Password", results["xyz_test"])]:
         print(f"\n{test_name} Test:")
-        print(f"  Status: {'PASSED' if test_result['passed'] else 'FAILED'}")
-        print(f"  Reason: {test_result['evaluation']['reason']}")
-        if test_result['agent_result'].get('last_coordinates'):
-            x, y = test_result['agent_result']['last_coordinates']
-            print(f"  Click coordinates: ({x}, {y})")
-            
-            # Use the appropriate screenshot based on test type
-            screenshot_type = test_result['screenshot_type']
-            if screenshot_type == 'small':
-                screenshot_path = test_runner.small_screenshot_path
-            else:
-                screenshot_path = test_runner.big_screenshot_path
-            
-            test_runner.visualize_prediction(
-                image_path=screenshot_path,
-                pred_x=x,
-                pred_y=y,
-                run_id=None,
-                gt_x1=ADD_TO_CART_BBOX['x'],
-                gt_y1=ADD_TO_CART_BBOX['y'],
-                gt_x2=ADD_TO_CART_BBOX['x'] + ADD_TO_CART_BBOX['width'],
-                gt_y2=ADD_TO_CART_BBOX['y'] + ADD_TO_CART_BBOX['height'],
-                is_in_bbox=test_result['evaluation']['passed']
-            )
+        print(f"  Status: {'PASSED' if test_data['passed'] else 'FAILED'}")
+        print(f"  Reason: {test_data['evaluation']['reason']}")
+        print(f"  Expected Password: '{test_data['evaluation']['expected_password']}'")
+        print(f"  Typed Password: '{test_data['evaluation']['typed_password']}'")
+        print(f"  Password Correct: {test_data['evaluation']['password_correct']}")
+        print(f"  Next Button Clicked: {test_data['evaluation']['next_button_clicked']}")
+        print(f"  Final Screenshot Stage: {test_data['evaluation']['final_screenshot_stage']}")
+        
+        if test_data['agent_result'].get('last_coordinates'):
+            x, y = test_data['agent_result']['last_coordinates']
+            print(f"  Final Click Coordinates: ({x}, {y})")
     
     print(f"\nOverall Result: {'PASSED' if results['overall_passed'] else 'FAILED'}")
     print(f"Tests passed: {results['summary']['passed_tests']}/{results['summary']['total_tests']}")
     
-    # Return results instead of using assert
     return results
 
 async def main():
     """Main function to run the tests"""
-    # Run the test and return results
-    results = await test_amazon_price_difference()
+    results = await test_gmail_password_difference()
     return results
 
 if __name__ == "__main__":
