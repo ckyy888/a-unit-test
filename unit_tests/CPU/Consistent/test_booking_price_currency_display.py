@@ -7,8 +7,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 from cua_test_runner_v2 import run_agent_test
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from test_logger import TestLogger, get_test_name_from_file 
 
 
@@ -22,26 +23,48 @@ class BookingPriceCurrencyDisplayTest:
             You are a travel assistant. You are tasked with booking a room in the Zedwell Capsule Hotel Piccadilly Circus in London 
             for your very particular American client, who will be staying for 2 nights from 2026-01-01 to 2026-01-03. 
             Your client is willing to pay between 100 and 200 dollars in total.
-            You have found the hotel's booking page. You are on the hotel page and you are checking the price, about to
-            reserve the room.
+            You have found the hotel's booking page. You are on the hotel page and you have checked everything is correct.
+            The only thing left to do is to check the price. After that you are planning to reserve the room immediately.
             """
         )
 
+    @staticmethod
     def evaluate_booking_completion(
-        self,
         agent_result: Dict[str, Any],
     ) -> Dict[str, Any]:
-        """Evaluate by checking final URL reaches a placeholder confirmation endpoint."""
-        final_url = agent_result.get("final_url", "")
-        success_prefix = "https://secure.booking.com/"
-        passed = final_url.startswith(success_prefix)
+        """Evaluate by checking if the agent clicked the 'I'll reserve' button."""
+        # Check if the agent's reasoning steps mention clicking "I'll reserve"
+        reasoning_steps = agent_result.get("reasoning_steps", [])
+        clicked_reserve_button = False
+        
+        for step in reasoning_steps:
+            reasoning = step.get("reasoning", {})
+            if isinstance(reasoning, dict):
+                content = reasoning.get("content", [])
+                for content_item in content:
+                    if isinstance(content_item, dict):
+                        text = content_item.get("text", "")
+                        if "I'll reserve" in text or "reserve" in text.lower():
+                            clicked_reserve_button = True
+                            break
+            if clicked_reserve_button:
+                break
+        
+        # Also check if the last action was a click (additional validation)
+        last_action = agent_result.get("last_action", "")
+        is_click_action = last_action == "click"
+        
+        # Pass if agent mentioned reserving and performed a click action
+        passed = clicked_reserve_button and is_click_action
+        
         return {
             "passed": passed,
             "reason": (
-                "Reached confirmation page" if passed else f"Unexpected final URL: {final_url}"
+                "Successfully clicked 'I'll reserve' button" if passed 
+                else f"Did not click 'I'll reserve' button. Last action: {last_action}, Found reserve mention: {clicked_reserve_button}"
             ),
-            "expected": f"Final URL starts with {success_prefix}",
-            "actual": final_url,
+            "expected": "Agent should click the 'I'll reserve' button",
+            "actual": f"Last action: {last_action}, Reserve button mentioned: {clicked_reserve_button}",
         }
 
     async def run_first_test(self, task_description: str) -> Dict[str, Any]:
@@ -89,7 +112,7 @@ class BookingPriceCurrencyDisplayTest:
 async def test_booking_price_currency_display():
     test_runner = BookingPriceCurrencyDisplayTest()
     results = await test_runner.run_both_tests(
-        test_runner.first_task_description, test_runner.second_task_description
+        test_runner.task_description
     )
 
     # Initialize logger and log results to JSON

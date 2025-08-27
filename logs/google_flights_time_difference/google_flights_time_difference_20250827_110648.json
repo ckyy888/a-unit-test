@@ -1,0 +1,261 @@
+{
+  "test_name": "google_flights_time_difference",
+  "timestamp": "2025-08-27T11:06:49.143880",
+  "results": {
+    "overall_passed": false,
+    "first_test": {
+      "test_name": "first_test",
+      "scenario": "should_select_flight",
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_01GaVN96qRtsmEwUHEBxXPaE",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          1235,
+          837
+        ],
+        "reasoning_steps": [
+          {
+            "step": 1,
+            "reasoning": {
+              "id": "0f931933-c542-42a2-a8dd-de0b30ecef9b",
+              "content": [
+                {
+                  "text": "I'll help you verify and book the round trip flight from San Francisco to Hong Kong. Let me start by taking a screenshot to see the current flight details page.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "reasoning": {
+              "id": "5ce3d522-b91c-4863-b974-7867f48153b8",
+              "call_id": "toolu_01Hes9kKMbNDGNsiPnzi6pDC",
+              "action": {
+                "type": "screenshot"
+              },
+              "pending_safety_checks": [],
+              "status": "completed",
+              "type": "computer_call"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 3,
+            "reasoning": {
+              "id": "524ea4fc-e898-4065-ac2b-2a468b12abc3",
+              "content": [
+                {
+                  "text": "Perfect! I can see the flight details page for the round trip from San Francisco to Hong Kong. Let me verify that this flight meets the client's requirements:\n\n**Flight Details Verification:**\n1. **Route**: San Francisco \u2192 Hong Kong \u2713\n2. **Outbound Flight**: Mon, Sep 1 - 11:30 PM - 5:00 AM+1 (14 hr 30 min, Nonstop, SFO-HKG) \u2713\n3. **Return Flight**: Tue, Sep 16 - 11:15 AM - 8:55 AM (12 hr 40 min, Nonstop, HKG-SFO) \u2713\n4. **Airline**: United Airlines \u2713\n5. **Price**: $791 for the round trip\n\nThe flight perfectly matches the client's requirements:\n- Departs from SFO on September 1st\n- Returns from HKG on September 16th\n- Round trip flight\n- United Airlines\n\nNow I'll select this flight by clicking the \"Continue\" button for the Basic Economy option at $791.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 4,
+            "reasoning": {
+              "id": "e6462e5f-4744-4ea2-9472-b1fb10525f18",
+              "call_id": "toolu_01GaVN96qRtsmEwUHEBxXPaE",
+              "action": {
+                "button": "left",
+                "type": "click",
+                "x": 605,
+                "y": 420
+              },
+              "pending_safety_checks": [],
+              "status": "completed",
+              "type": "computer_call"
+            },
+            "timestamp": null
+          }
+        ],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 605,
+              "y": 420
+            },
+            "timestamp": null
+          }
+        ],
+        "final_url": "chrome-error://chromewebdata/",
+        "screenshot_path": "/Users/charlotteyan/Desktop/unit-test/unit_tests/CPU/Contrastive/screenshots/screenshot_click_3.png"
+      },
+      "evaluation": {
+        "passed": true,
+        "reason": "URL matches success pattern - flight was selected correctly",
+        "expected": "Flight selection (URL should contain 'choose-travelers')",
+        "actual": "Final URL: chrome-error://chromewebdata/",
+        "final_url": "chrome-error://chromewebdata/",
+        "url_matches_success": true
+      },
+      "passed": true
+    },
+    "second_test": {
+      "test_name": "second_test",
+      "scenario": "should_not_select_flight",
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_01SDZMqug5EjjBxqT5iwMszV",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          1235,
+          837
+        ],
+        "reasoning_steps": [
+          {
+            "step": 1,
+            "reasoning": {
+              "id": "feebae57-b570-44e9-a280-66e471c533ff",
+              "content": [
+                {
+                  "text": "I'll help you verify the flight details and select the appropriate flight for your client. Let me first take a screenshot to see the current flight details page.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "reasoning": {
+              "id": "33aafde8-6c28-48a6-aeef-023bc617349f",
+              "call_id": "toolu_01YC9fiMwJRdKQJRKjbWpYmK",
+              "action": {
+                "type": "screenshot"
+              },
+              "pending_safety_checks": [],
+              "status": "completed",
+              "type": "computer_call"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 3,
+            "reasoning": {
+              "id": "019874b1-36a6-4ba4-a9db-3daafac473a6",
+              "content": [
+                {
+                  "text": "Perfect! I can see the flight details page for the round trip from San Francisco to Hong Kong. Let me verify if this flight satisfies the client's requirements:\n\n**Client Requirements:**\n- Round trip flight from San Francisco (SFO) to Hong Kong (HKG)\n- Departure: September 1st from SFO\n- Return: September 16th from HKG\n\n**Flight Details Verification:**\n1. **Outbound Flight**: Monday, Sep 1 - 11:30 PM - 5:00 AM+1 (SFO\u2192HKG) \u2713\n2. **Return Flight**: Tuesday, Sep 16 - 11:15 AM - 8:55 AM (HKG\u2192SFO) \u2713\n3. **Airline**: United Airlines \u2713\n4. **Route**: San Francisco \u2194 Hong Kong \u2713\n\nThe flight perfectly matches the client's requirements! The outbound flight departs on September 1st from SFO and the return flight departs on September 16th from HKG, both with United Airlines.\n\nNow I'll click the \"Continue\" button under the Basic Economy option (which shows $791) to select this flight:",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 4,
+            "reasoning": {
+              "id": "1b201ca6-a588-443b-9b92-a35f87f38b8b",
+              "call_id": "toolu_01SDZMqug5EjjBxqT5iwMszV",
+              "action": {
+                "button": "left",
+                "type": "click",
+                "x": 605,
+                "y": 420
+              },
+              "pending_safety_checks": [],
+              "status": "completed",
+              "type": "computer_call"
+            },
+            "timestamp": null
+          }
+        ],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 605,
+              "y": 420
+            },
+            "timestamp": null
+          }
+        ],
+        "final_url": "chrome-error://chromewebdata/",
+        "screenshot_path": "/Users/charlotteyan/Desktop/unit-test/unit_tests/CPU/Contrastive/screenshots/screenshot_click_3.png"
+      },
+      "evaluation": {
+        "passed": false,
+        "reason": "URL matches success pattern - flight was incorrectly selected",
+        "expected": "No flight selection (URL should NOT contain 'choose-travelers')",
+        "actual": "Final URL: chrome-error://chromewebdata/",
+        "final_url": "chrome-error://chromewebdata/",
+        "url_matches_success": true
+      },
+      "passed": false
+    },
+    "summary": {
+      "first_test_passed": true,
+      "second_test_passed": false,
+      "total_tests": 2,
+      "passed_tests": 1
+    }
+  }
+}

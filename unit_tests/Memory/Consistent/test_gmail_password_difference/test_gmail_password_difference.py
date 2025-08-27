@@ -10,8 +10,11 @@ import urllib.parse
 
 load_dotenv()
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../../..'))
 from cua_test_runner import run_agent_test
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
+from test_logger import TestLogger, get_test_name_from_file
 
 PASSWORD_INPUT_BBOX = {
     "x": 1519,
@@ -83,24 +86,23 @@ class GmailPasswordDifferenceTest:
         return self.is_point_inside_bbox(x, y, NEXT_BUTTON_BBOX)
     
     def evaluate_password_test(self, agent_result: Dict[str, Any], expected_password: str) -> Dict[str, Any]:
-        """Evaluate if the agent successfully entered the correct password and clicked next"""
+        """Evaluate if the agent successfully entered the correct password"""
         typed_text = agent_result.get('typed_text', '')
         last_coordinates = agent_result.get('last_coordinates')
+        reasoning_steps = agent_result.get('reasoning_steps', [])
+        action_steps = agent_result.get('action_steps', [])
         
         # Check if password was typed correctly
         password_correct = typed_text.strip() == expected_password
         
-        # Check if final click was on next button (and agent reached gmail4.png stage)
+        # Check if final click was on next button (for logging purposes)
         next_button_clicked = False
         if last_coordinates:
             x, y = last_coordinates
             next_button_clicked = self.is_click_in_next_button(x, y)
         
-        # Agent passes only if they typed correct password AND clicked next on gmail4.png
-        # AND reached the final screenshot stage (meaning they typed 3 characters)
-        passed = (password_correct and 
-                 next_button_clicked and 
-                 self.current_screenshot_stage == 4)
+        # Agent passes if they typed correct password (no next button requirement)
+        passed = password_correct
         
         return {
             "passed": passed,
@@ -110,6 +112,10 @@ class GmailPasswordDifferenceTest:
             "typed_password": typed_text,
             "expected_password": expected_password,
             "last_click_coordinates": last_coordinates,
+            "reasoning_steps": reasoning_steps,
+            "action_steps": action_steps,
+            "total_reasoning_steps": len(reasoning_steps),
+            "total_action_steps": len(action_steps),
             "reason": self._get_failure_reason(password_correct, next_button_clicked, self.current_screenshot_stage)
         }
     
@@ -151,6 +157,10 @@ class GmailPasswordDifferenceTest:
         # Create wrapped screenshot function
         wrapped_screenshot = screenshot_wrapper(progressive_screenshot_func)
         
+        # Initialize reasoning and action logging
+        reasoning_steps = []
+        action_steps = []
+        
         def click_handler(x, y, button='left'):
             tracker.last_action = 'click'
             
@@ -191,12 +201,9 @@ class GmailPasswordDifferenceTest:
                 # Stay on gmail1.png when password input is clicked - don't advance stage
             elif self.is_click_in_next_button(effective_coords[0], effective_coords[1]):
                 print("Click detected on next button!")
-                # Only terminate if we're on the final screenshot and password is correct
-                if self.current_screenshot_stage == 4 and tracker.typed_text.strip() == expected_password:
-                    tracker.should_terminate = True
-                    print("Setting termination flag - correct password and next button clicked on final screen")
-                else:
-                    print(f"Next button clicked but conditions not met: stage={self.current_screenshot_stage}, typed='{tracker.typed_text}', expected='{expected_password}'")
+                # Terminate after any next button click
+                tracker.should_terminate = True
+                print("Setting termination flag - next button clicked")
             else:
                 # For other clicks, set termination flag after any click (default behavior)
                 tracker.should_terminate = True
@@ -242,6 +249,11 @@ class GmailPasswordDifferenceTest:
                 elif len(tracker.typed_text) == 3 and self.current_screenshot_stage == 3:
                     self.current_screenshot_stage = 4
                     print("Advanced to screenshot stage 4 (gmail4.png)")
+                    
+                # Check if password is complete and terminate if correct
+                if tracker.typed_text.strip() == expected_password:
+                    print(f"Password '{expected_password}' completed correctly - setting termination flag")
+                    tracker.should_terminate = True
             
             return None
         
@@ -258,7 +270,7 @@ class GmailPasswordDifferenceTest:
         # Create agent
         try:
             agent = ComputerAgent(
-                model="claude-3-5-sonnet-20241022",
+                model="claude-sonnet-4-20250514",
                 tools=[custom_computer]
             )
         except Exception as e:
@@ -285,6 +297,29 @@ class GmailPasswordDifferenceTest:
             async for result in agent.run(messages):
                 final_result = result
                 
+                # Process and log reasoning/actions from agent output
+                if "output" in result:
+                    for item in result["output"]:
+                        if item.get("type") == "computer_call":
+                            action = item.get("action", {})
+                            action_type = action.get("type", "")
+                            action_steps.append({
+                                'step': len(action_steps) + 1,
+                                'action_type': action_type,
+                                'action_details': action,
+                                'timestamp': result.get('timestamp') if 'timestamp' in result else None
+                            })
+                            print(f"Computer Action Step {len(action_steps)}: {action_type}({action})")
+                        elif item.get("type") != "computer_call_output":
+                            # This is reasoning text
+                            reasoning_text = item
+                            reasoning_steps.append({
+                                'step': len(reasoning_steps) + 1,
+                                'reasoning': reasoning_text,
+                                'timestamp': result.get('timestamp') if 'timestamp' in result else None
+                            })
+                            print(f"Reasoning Step {len(reasoning_steps)}: {reasoning_text}")
+                
                 # Check if we should terminate after processing this result
                 if tracker.should_terminate:
                     print("Terminating trajectory")
@@ -292,6 +327,7 @@ class GmailPasswordDifferenceTest:
             
             print(f"Agent completed. Last action: {tracker.last_action}, Last coordinates: {tracker.last_coordinates}")
             print(f"Typed text: '{tracker.typed_text}', Final screenshot stage: {self.current_screenshot_stage}")
+            print(f"Captured {len(reasoning_steps)} reasoning steps and {len(action_steps)} action steps")
             
             return {
                 'success': True,
@@ -299,7 +335,9 @@ class GmailPasswordDifferenceTest:
                 'last_action': tracker.last_action,
                 'last_coordinates': tracker.last_coordinates,
                 'typed_text': tracker.typed_text,
-                'typing_count': tracker.typing_count
+                'typing_count': tracker.typing_count,
+                'reasoning_steps': reasoning_steps,
+                'action_steps': action_steps
             }
         except Exception as e:
             print(f"Agent failed with error: {e}")
@@ -311,7 +349,9 @@ class GmailPasswordDifferenceTest:
                 'last_action': tracker.last_action,
                 'last_coordinates': tracker.last_coordinates,
                 'typed_text': tracker.typed_text,
-                'typing_count': tracker.typing_count
+                'typing_count': tracker.typing_count,
+                'reasoning_steps': reasoning_steps,
+                'action_steps': action_steps
             }
 
 async def test_gmail_password_difference():
@@ -335,7 +375,6 @@ async def test_gmail_password_difference():
     1. Take a screenshot to see the current login page
     2. Click on the password input field
     3. Type the password "abc" (one character at a time)
-    4. Click the "Next" button to proceed
     
     You have access to computer control functions including screenshot, click, type, scroll, and move.
     Start by taking a screenshot to see the current page.
@@ -359,7 +398,6 @@ async def test_gmail_password_difference():
     1. Take a screenshot to see the current login page
     2. Click on the password input field
     3. Type the password "xyz" (one character at a time)
-    4. Click the "Next" button to proceed
     
     You have access to computer control functions including screenshot, click, type, scroll, and move.
     Start by taking a screenshot to see the current page.
@@ -389,28 +427,9 @@ async def test_gmail_password_difference():
         }
     }
     
-    # Print detailed results
-    print("\n" + "="*60)
-    print("GMAIL PASSWORD DIFFERENCE TEST RESULTS")
-    print("="*60)
-    
-    for test_name, test_data in [("ABC Password", results["abc_test"]), 
-                                ("XYZ Password", results["xyz_test"])]:
-        print(f"\n{test_name} Test:")
-        print(f"  Status: {'PASSED' if test_data['passed'] else 'FAILED'}")
-        print(f"  Reason: {test_data['evaluation']['reason']}")
-        print(f"  Expected Password: '{test_data['evaluation']['expected_password']}'")
-        print(f"  Typed Password: '{test_data['evaluation']['typed_password']}'")
-        print(f"  Password Correct: {test_data['evaluation']['password_correct']}")
-        print(f"  Next Button Clicked: {test_data['evaluation']['next_button_clicked']}")
-        print(f"  Final Screenshot Stage: {test_data['evaluation']['final_screenshot_stage']}")
-        
-        if test_data['agent_result'].get('last_coordinates'):
-            x, y = test_data['agent_result']['last_coordinates']
-            print(f"  Final Click Coordinates: ({x}, {y})")
-    
-    print(f"\nOverall Result: {'PASSED' if results['overall_passed'] else 'FAILED'}")
-    print(f"Tests passed: {results['summary']['passed_tests']}/{results['summary']['total_tests']}")
+    # Initialize logger and log results to JSON
+    logger = TestLogger("gmail_password_difference")
+    logger.log_and_print_summary(results)
     
     return results
 

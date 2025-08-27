@@ -14,6 +14,7 @@ load_dotenv()
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 from cua_test_runner_v2 import run_agent_test
 from playwright.async_api import async_playwright  # type: ignore
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from test_logger import TestLogger, get_test_name_from_file 
 
 class AllRecipesApplePieTest:

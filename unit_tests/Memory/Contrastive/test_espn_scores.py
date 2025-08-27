@@ -7,8 +7,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 from cua_test_runner_v2 import run_agent_test  # type: ignore
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+from test_logger import TestLogger, get_test_name_from_file
 
 
 class EspnScoresTest:
@@ -30,9 +32,27 @@ class EspnScoresTest:
             """
         )
 
+    def extract_agent_final_output(self, agent_result: Dict[str, Any]) -> str:
+        """Extract the agent's final text output/reasoning from the result."""
+        # Check reasoning_steps for the agent's text output
+        reasoning_steps = agent_result.get("reasoning_steps", [])
+        if not reasoning_steps:
+            return ""
+        
+        # Get the last reasoning step that contains text output
+        final_reasoning = ""
+        for step in reasoning_steps:
+            reasoning = step.get("reasoning", {})
+            content = reasoning.get("content", [])
+            for item in content:
+                if item.get("type") == "output_text":
+                    final_reasoning = item.get("text", "")
+        
+        return final_reasoning
+
     def evaluate_first_submission(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
         # First agent should include all teams: Pacers, Cavaliers, Warriors, and Timberwolves
-        response_text = agent_result.get("response", "").lower()
+        response_text = self.extract_agent_final_output(agent_result).lower()
         required_teams = ["pacers", "cavaliers", "warriors", "timberwolves"]
         
         found_teams = []
@@ -60,7 +80,7 @@ class EspnScoresTest:
 
     def evaluate_second_submission(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
         # Second agent should include ONLY Pacers and Cavaliers, and NOT Warriors or Timberwolves
-        response_text = agent_result.get("response", "").lower()
+        response_text = self.extract_agent_final_output(agent_result).lower()
         allowed_teams = ["pacers", "cavaliers"]
         forbidden_teams = ["warriors", "timberwolves"]
         
@@ -151,25 +171,9 @@ async def test_espn_scores():
         test_runner.first_task_description, test_runner.second_task_description
     )
 
-    print("\n" + "=" * 50)
-    print("ESPN SCORES TEST RESULTS")
-    print("=" * 50)
-    for test_name, test_result in [
-        ("First Test (All Teams)", results["first_test"]),
-        ("Second Test (Filtered Teams)", results["second_test"]),
-    ]:
-        print(f"\n{test_name}:")
-        print(f"  Status: {'PASSED' if test_result['passed'] else 'FAILED'}")
-        print(f"  Reason: {test_result['evaluation']['reason']}")
-        print(f"  Expected: {test_result['evaluation']['expected']}")
-        print(f"  Actual: {test_result['evaluation']['actual']}")
-
-    print(
-        f"\nOverall Result: {'PASSED' if results['overall_passed'] else 'FAILED'}"
-    )
-    print(
-        f"Tests passed: {results['summary']['passed_tests']}/{results['summary']['total_tests']}"
-    )
+    # Initialize logger and log results to JSON
+    logger = TestLogger("espn_scores")
+    logger.log_and_print_summary(results)
     return results
 
 

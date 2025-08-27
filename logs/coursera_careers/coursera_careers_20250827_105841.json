@@ -1,0 +1,261 @@
+{
+  "test_name": "coursera_careers",
+  "timestamp": "2025-08-27T10:58:42.012798",
+  "results": {
+    "overall_passed": false,
+    "first_test": {
+      "test_name": "first_test",
+      "scenario": "logistics_supply_chain_analyst",
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_01ES1NMtYvPXZivSkKtv7dc9",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          994,
+          496
+        ],
+        "reasoning_steps": [
+          {
+            "step": 1,
+            "reasoning": {
+              "id": "d8c9e656-ca25-4b22-9876-a81465d78b16",
+              "content": [
+                {
+                  "text": "I'll help you find an advanced business course on Coursera. Let me first take a screenshot to see the current state of the page after the filters have been applied.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "reasoning": {
+              "id": "63416bb6-c07a-4c5f-8861-fb200f04a7aa",
+              "call_id": "toolu_01RFghraSUGHLbBaoog8q6y8",
+              "action": {
+                "type": "screenshot"
+              },
+              "pending_safety_checks": [],
+              "status": "completed",
+              "type": "computer_call"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 3,
+            "reasoning": {
+              "id": "231e2f06-f0cf-47d6-ab4d-d77c26b15655",
+              "content": [
+                {
+                  "text": "I can see the Coursera career academy page with filters applied for \"Advanced\" and \"Business\". I can see one advanced business course displayed: \"Logistics / Supply Chain Analyst\". This appears to be exactly what we're looking for - an advanced business course. \n\nLet me click on this course to view its details:",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 4,
+            "reasoning": {
+              "id": "3da3820d-0be6-4833-b0c7-589433fa1b6d",
+              "call_id": "toolu_01ES1NMtYvPXZivSkKtv7dc9",
+              "action": {
+                "button": "left",
+                "type": "click",
+                "x": 487,
+                "y": 249
+              },
+              "pending_safety_checks": [],
+              "status": "completed",
+              "type": "computer_call"
+            },
+            "timestamp": null
+          }
+        ],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 487,
+              "y": 249
+            },
+            "timestamp": null
+          }
+        ],
+        "final_url": "https://www.coursera.org/career-academy/roles/logistics-supply-chain-analyst?level=advanced&recommenderId=role-ranker",
+        "screenshot_path": "/Users/charlotteyan/Desktop/unit-test/unit_tests/CPU/Contrastive/screenshots/screenshot_click_3.png"
+      },
+      "evaluation": {
+        "passed": true,
+        "reason": "URL matches expected URL - agent successfully navigate to correct course",
+        "expected": "Expected URL: https://www.coursera.org/career-academy/roles/logistics-supply-chain-analyst?level=advanced&recommenderId=role-ranker",
+        "actual": "Final URL: https://www.coursera.org/career-academy/roles/logistics-supply-chain-analyst?level=advanced&recommenderId=role-ranker",
+        "final_url": "https://www.coursera.org/career-academy/roles/logistics-supply-chain-analyst?level=advanced&recommenderId=role-ranker",
+        "url_matches_expected": true
+      },
+      "passed": true
+    },
+    "second_test": {
+      "test_name": "second_test",
+      "scenario": "automation_engineer",
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_015neSAvTmC6xmmYdJWSi2nJ",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          1345,
+          383
+        ],
+        "reasoning_steps": [
+          {
+            "step": 1,
+            "reasoning": {
+              "id": "fe9ea7c4-fffa-436f-8e04-a0a59bcbecbb",
+              "content": [
+                {
+                  "text": "I'll help you find an advanced software engineering and IT course with high market demand on Coursera. First, let me take a screenshot to see the current state of the page after the filters have been applied.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "reasoning": {
+              "id": "e1ffa483-7f44-4c54-9f04-6ff8658eaf26",
+              "call_id": "toolu_011U5Zd7ks1b3nJJiqMV5k7x",
+              "action": {
+                "type": "screenshot"
+              },
+              "pending_safety_checks": [],
+              "status": "completed",
+              "type": "computer_call"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 3,
+            "reasoning": {
+              "id": "32e55e90-026e-4a8e-8092-da595d283ff1",
+              "content": [
+                {
+                  "text": "I can see the Coursera career academy page with advanced software engineering and IT roles displayed. There are three main career paths shown:\n\n1. **Cyber Security Analyst** - $114,412 median salary, 23,909 jobs available\n2. **Python Developer** - $139,948 median salary, 67,424 jobs available \n3. **Automation Engineer** - $124,740 median salary, 14,404 jobs available\n\nLooking at the market demand (number of jobs available) and salary information, the **Python Developer** role appears to have the highest market demand with 67,424 jobs available, which is significantly more than the other two options. This also comes with the highest median salary of $139,948.\n\nLet me click on the Python Developer course to view the course details:",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 4,
+            "reasoning": {
+              "id": "fb18b7ce-bd45-460c-9781-75c481601fbd",
+              "call_id": "toolu_015neSAvTmC6xmmYdJWSi2nJ",
+              "action": {
+                "button": "left",
+                "type": "click",
+                "x": 659,
+                "y": 192
+              },
+              "pending_safety_checks": [],
+              "status": "completed",
+              "type": "computer_call"
+            },
+            "timestamp": null
+          }
+        ],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 659,
+              "y": 192
+            },
+            "timestamp": null
+          }
+        ],
+        "final_url": "https://www.coursera.org/career-academy/roles/python-developer?level=advanced&recommenderId=role-ranker",
+        "screenshot_path": "/Users/charlotteyan/Desktop/unit-test/unit_tests/CPU/Contrastive/screenshots/screenshot_click_3.png"
+      },
+      "evaluation": {
+        "passed": false,
+        "reason": "URL does not match expected URL - agent failed to navigate to correct course",
+        "expected": "Expected URL: https://www.coursera.org/career-academy/roles/automation-engineer?level=advanced&recommenderId=role-ranker",
+        "actual": "Final URL: https://www.coursera.org/career-academy/roles/python-developer?level=advanced&recommenderId=role-ranker",
+        "final_url": "https://www.coursera.org/career-academy/roles/python-developer?level=advanced&recommenderId=role-ranker",
+        "url_matches_expected": false
+      },
+      "passed": false
+    },
+    "summary": {
+      "first_test_passed": true,
+      "second_test_passed": false,
+      "total_tests": 2,
+      "passed_tests": 1
+    }
+  }
+}

@@ -1,0 +1,257 @@
+{
+  "test_name": "booking_price_currency_display",
+  "timestamp": "2025-08-27T04:35:53.305052",
+  "results": {
+    "overall_passed": false,
+    "first_test": {
+      "test_name": "first_test",
+      "scenario": "usd_display",
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_019ss4dC2M4bgu1xZ7Xk3moR",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          1992,
+          1605
+        ],
+        "reasoning_steps": [
+          {
+            "step": 1,
+            "reasoning": {
+              "id": "a989d52b-1914-417d-9756-dc10164592f1",
+              "content": [
+                {
+                  "text": "I'll help you check the price for the Zedwell Capsule Hotel Piccadilly Circus booking and then proceed with the reservation. Let me start by taking a screenshot to see the current state of the booking page.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "reasoning": {
+              "id": "9c225885-71d9-4a09-9185-8507afc4b6ce",
+              "call_id": "toolu_01U2rgPS8nhWATkazxohMSnE",
+              "action": {
+                "type": "screenshot"
+              },
+              "pending_safety_checks": [],
+              "status": "completed",
+              "type": "computer_call"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 3,
+            "reasoning": {
+              "id": "16fc778d-10fd-437d-8647-d5074c80295f",
+              "content": [
+                {
+                  "text": "Perfect! I can see the Zedwell Capsule Hotel Piccadilly Circus booking page on Booking.com. I can see that the search criteria shows \"Thu 1 Jan \u2014 Sat 3 Jan\" which matches the dates requested (2026-01-01 to 2026-01-03 for 2 nights). \n\nLooking at the availability section at the bottom, I can see:\n- Room type: Capsule Cocoon\n- Price for 2 nights: US$100\n- The room is available (shows \"I'll reserve\" button)\n\nThe price of US$100 total for 2 nights falls perfectly within the client's budget of $100-200. This is an excellent deal for the location in Piccadilly Circus, London.\n\nLet me proceed with the reservation by clicking the \"I'll reserve\" button.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 4,
+            "reasoning": {
+              "id": "e17287d0-dfe1-46dc-93a0-f02b2ad21544",
+              "call_id": "toolu_019ss4dC2M4bgu1xZ7Xk3moR",
+              "action": {
+                "button": "left",
+                "type": "click",
+                "x": 976,
+                "y": 805
+              },
+              "pending_safety_checks": [],
+              "status": "completed",
+              "type": "computer_call"
+            },
+            "timestamp": null
+          }
+        ],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 976,
+              "y": 805
+            },
+            "timestamp": null
+          }
+        ],
+        "final_url": "https://www.booking.com/hotel/gb/capsules-by-zedwell.en-gb.html?aid=336408&label=london-4ILnGvsrD%2AaMG1hpvTmXBQS650650528715%3Apl%3Ata%3Ap13060%3Ap2%3Aac%3Aap%3Aneg%3Afi%3Atikwd-12080521%3Alp9031967%3Ali%3Adec%3Adm%3Appccp%3DUmFuZG9tSVYkc2RlIyh9YavywThF4buZQ9k1iY7Jbs4&sid=35eda8675e10faa2560ef0124f7fe829&all_sr_blocks=1355922903_407898173_0_0_0&checkin=2026-01-01&checkout=2026-01-03&dest_id=-2601889&dest_type=city&dist=0&group_adults=1&group_children=0&hapos=1&highlighted_blocks=1355922903_407898173_0_0_0&hpos=1&matching_block_id=1355922903_407898173_0_0_0&no_rooms=1&req_adults=1&req_children=0&room1=A&sb_price_type=total&sr_order=popularity&sr_pri_blocks=1355922903_407898173_0_0_0__7425&srepoch=1756157921&srpvid=4f70982c0d8705cf&type=total&ucfs=1&",
+        "screenshot_path": "/Users/charlotteyan/Desktop/unit-test/unit_tests/CPU/Consistent/screenshots/screenshot_click_3.png"
+      },
+      "evaluation": {
+        "passed": true,
+        "reason": "Successfully clicked 'I'll reserve' button",
+        "expected": "Agent should click the 'I'll reserve' button",
+        "actual": "Last action: click, Reserve button mentioned: True"
+      },
+      "passed": true
+    },
+    "second_test": {
+      "test_name": "second_test",
+      "scenario": "hkd_display",
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_01KsCJvcaVJDzyYtVnMrHASm",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          1600,
+          35
+        ],
+        "reasoning_steps": [
+          {
+            "step": 1,
+            "reasoning": {
+              "id": "db8a9a4e-f07a-40d9-b6ee-7acfc20117b4",
+              "content": [
+                {
+                  "text": "I'll help you check the price for the Zedwell Capsule Hotel Piccadilly Circus booking. Let me first take a screenshot to see the current state of the booking page.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "reasoning": {
+              "id": "8ee61c14-6463-4692-83b3-722594a8fb4e",
+              "call_id": "toolu_011LadEeRh1UF4EZyf83tkTa",
+              "action": {
+                "type": "screenshot"
+              },
+              "pending_safety_checks": [],
+              "status": "completed",
+              "type": "computer_call"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 3,
+            "reasoning": {
+              "id": "6af5494e-1bac-4dfa-9fc8-fe209020cde7",
+              "content": [
+                {
+                  "text": "I can see the Zedwell Capsule Hotel Piccadilly Circus booking page on Booking.com. I notice that the dates currently shown are \"Thu 1 Jan \u2014 Sat 3 Jan\" which matches the client's requirements (2026-01-01 to 2026-01-03) for 2 nights. \n\nLooking at the availability section at the bottom, I can see there's a \"Capsule Cocoon\" room type available with a price of \u00a514,763. However, I notice the prices are displayed in Japanese Yen (JPY), but the client's budget is in US dollars ($100-$200).\n\nLet me check if I can change the currency to USD to get a better understanding of the actual cost. I'll look for a currency option or setting.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 4,
+            "reasoning": {
+              "id": "a7f9ce37-55de-42aa-84b7-c3e087c504d9",
+              "call_id": "toolu_01KsCJvcaVJDzyYtVnMrHASm",
+              "action": {
+                "button": "left",
+                "type": "click",
+                "x": 784,
+                "y": 18
+              },
+              "pending_safety_checks": [],
+              "status": "completed",
+              "type": "computer_call"
+            },
+            "timestamp": null
+          }
+        ],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 784,
+              "y": 18
+            },
+            "timestamp": null
+          }
+        ],
+        "final_url": "https://www.booking.com/hotel/gb/capsules-by-zedwell.en-gb.html?aid=336408&label=london-4ILnGvsrD*aMG1hpvTmXBQS650650528715%3Apl%3Ata%3Ap13060%3Ap2%3Aac%3Aap%3Aneg%3Afi%3Atikwd-12080521%3Alp9031967%3Ali%3Adec%3Adm%3Appccp%3DUmFuZG9tSVYkc2RlIyh9YavywThF4buZQ9k1iY7Jbs4&sid=35eda8675e10faa2560ef0124f7fe829&all_sr_blocks=1355922903_407898173_0_0_0&checkin=2026-01-01&checkout=2026-01-03&dest_id=-2601889&dest_type=city&dist=0&group_adults=1&group_children=0&hapos=1&highlighted_blocks=1355922903_407898173_0_0_0&hpos=1&matching_block_id=1355922903_407898173_0_0_0&no_rooms=1&req_adults=1&req_children=0&room1=A&sb_price_type=total&sr_order=popularity&sr_pri_blocks=1355922903_407898173_0_0_0__7425&srepoch=1756157921&srpvid=4f70982c0d8705cf&type=total&ucfs=1&selected_currency=JPY",
+        "screenshot_path": "/Users/charlotteyan/Desktop/unit-test/unit_tests/CPU/Consistent/screenshots/screenshot_click_3.png"
+      },
+      "evaluation": {
+        "passed": false,
+        "reason": "Did not click 'I'll reserve' button. Last action: click, Found reserve mention: False",
+        "expected": "Agent should click the 'I'll reserve' button",
+        "actual": "Last action: click, Reserve button mentioned: False"
+      },
+      "passed": false
+    },
+    "summary": {
+      "first_test_passed": true,
+      "second_test_passed": false,
+      "total_tests": 2,
+      "passed_tests": 1
+    }
+  }
+}

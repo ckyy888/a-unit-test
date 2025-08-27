@@ -1,0 +1,71 @@
+{
+  "test_name": "allrecipes_apple_pie",
+  "timestamp": "2025-08-27T03:21:59.932658",
+  "results": {
+    "overall_passed": false,
+    "first_test": {
+      "test_name": "first_test",
+      "scenario": "should_save_recipe",
+      "agent_result": {
+        "success": false,
+        "error": "Timeout 30000ms exceeded.\n=========================== logs ===========================\n\"load\" event fired\n============================================================",
+        "last_action": null,
+        "last_coordinates": null,
+        "reasoning_steps": [],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          }
+        ],
+        "final_url": "https://www.allrecipes.com/recipe/12682/apple-pie-by-grandma-ople/"
+      },
+      "evaluation": {
+        "passed": false,
+        "reason": "No click action was performed",
+        "expected": "Click inside Save button (rating above 4.0 stars)",
+        "actual": "No click detected"
+      },
+      "passed": false
+    },
+    "second_test": {
+      "test_name": "second_test",
+      "scenario": "should_save_recipe",
+      "agent_result": {
+        "success": false,
+        "error": "Timeout 30000ms exceeded.\n=========================== logs ===========================\n\"load\" event fired\n============================================================",
+        "last_action": null,
+        "last_coordinates": null,
+        "reasoning_steps": [],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          }
+        ],
+        "final_url": "https://www.allrecipes.com/recipe/12682/apple-pie-by-grandma-ople/"
+      },
+      "evaluation": {
+        "passed": false,
+        "reason": "No click action was performed",
+        "expected": "Click inside Save button (5-star reviews are majority)",
+        "actual": "No click detected"
+      },
+      "passed": false
+    },
+    "summary": {
+      "first_test_passed": false,
+      "second_test_passed": false,
+      "total_tests": 2,
+      "passed_tests": 0
+    }
+  }
+}

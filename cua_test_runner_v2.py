@@ -68,8 +68,9 @@ class PlaywrightComputerHandler(AsyncComputerHandler):
                 print(f"Navigating to: {self.url}")
                 await self.page.goto(self.url, wait_until='domcontentloaded', timeout=30000)
                 
-                # Wait for page to be ready
-                await self.page.wait_for_load_state('networkidle', timeout=30000)
+                # Skip networkidle wait for pages with continuous network activity (like ESPN)
+                # Add a small delay to let initial content load
+                await asyncio.sleep(2)
                 print(f"Browser initialized successfully for URL: {self.url}")
                 print(f"Current page URL: {self.page.url}")
                 
@@ -210,8 +211,8 @@ class PlaywrightComputerHandler(AsyncComputerHandler):
                 
                 # Wait for new page to load with better error handling
                 try:
-                    await new_page.wait_for_load_state('domcontentloaded', timeout=15000)
-                    await new_page.wait_for_load_state('networkidle', timeout=15000)
+                                    await new_page.wait_for_load_state('domcontentloaded', timeout=15000)
+                # Skip networkidle wait - pages may have continuous network activity
                 except Exception as load_error:
                     print(f"Warning: New page load timeout: {load_error}")
                     # Continue anyway, page might still be usable
@@ -236,7 +237,7 @@ class PlaywrightComputerHandler(AsyncComputerHandler):
                     print(f"Navigation detected on current page, waiting for load state...")
                     try:
                         await self.page.wait_for_load_state('domcontentloaded', timeout=15000)
-                        await self.page.wait_for_load_state('networkidle', timeout=15000)
+                        # Skip networkidle wait - pages may have continuous network activity
                     except Exception as load_error:
                         print(f"Warning: Page load timeout: {load_error}")
                     print(f"Navigation completed to: {self.page.url}")
@@ -247,7 +248,7 @@ class PlaywrightComputerHandler(AsyncComputerHandler):
                         print(f"Delayed navigation detected, waiting for load state...")
                         try:
                             await self.page.wait_for_load_state('domcontentloaded', timeout=15000)
-                            await self.page.wait_for_load_state('networkidle', timeout=15000)
+                            # Skip networkidle wait - pages may have continuous network activity
                         except Exception as load_error:
                             print(f"Warning: Delayed page load timeout: {load_error}")
                         print(f"Navigation completed to: {self.page.url}")
@@ -419,7 +420,7 @@ async def run_agent_test(url: str, task_description: str) -> Dict[str, Any]:
     # Create agent
     try:
         agent = ComputerAgent(
-            model="claude-3-5-sonnet-20241022",
+            model="claude-sonnet-4-20250514",
             tools=[custom_computer]
         )
     except Exception as e:
@@ -442,6 +443,8 @@ async def run_agent_test(url: str, task_description: str) -> Dict[str, Any]:
         
         # Collect all results from the async generator
         final_result = None
+        reasoning_steps = []  # Collect reasoning at each step
+        action_steps = []  # Collect actions at each step
         async for result in agent.run(messages):
             final_result = result
             # Process any computer calls that might trigger our record_click function
@@ -453,9 +456,21 @@ async def run_agent_test(url: str, task_description: str) -> Dict[str, Any]:
                     if item.get("type") == "computer_call":
                         action = item.get("action", {})
                         action_type = action.get("type", "")
-                        print(f"Computer Action: {action_type}({action})")
-                    if item.get("type") == "reasoning":
-                        print(f"Reasoning: {item.get('output_text')}")
+                        action_steps.append({
+                            'step': len(action_steps) + 1,
+                            'action_type': action_type,
+                            'action_details': action,
+                            'timestamp': result.get('timestamp') if 'timestamp' in result else None
+                        })
+                        print(f"Computer Action Step {len(action_steps)}: {action_type}({action})")
+                    if item.get("type") != "computer_call_output":
+                        reasoning_text = item
+                        reasoning_steps.append({
+                            'step': len(reasoning_steps) + 1,
+                            'reasoning': reasoning_text,
+                            'timestamp': result.get('timestamp') if 'timestamp' in result else None
+                        })
+                        print(f"Reasoning Step {len(reasoning_steps)}: {reasoning_text}")
             
             # Check if we should terminate after processing this result
             if custom_computer.should_terminate:
@@ -463,6 +478,7 @@ async def run_agent_test(url: str, task_description: str) -> Dict[str, Any]:
                 break
         
         print(f"Agent completed. Last action: {custom_computer.last_action}, Last coordinates: {custom_computer.last_coordinates}")
+        print(f"Captured {len(reasoning_steps)} reasoning steps and {len(action_steps)} action steps")
         
         # Get the final URL before closing browser
         final_url = None
@@ -484,7 +500,9 @@ async def run_agent_test(url: str, task_description: str) -> Dict[str, Any]:
             'success': True,
             'result': final_result,
             'last_action': custom_computer.last_action,
-            'last_coordinates': custom_computer.last_coordinates
+            'last_coordinates': custom_computer.last_coordinates,
+            'reasoning_steps': reasoning_steps,
+            'action_steps': action_steps
         }
         
         if final_url:
@@ -519,7 +537,9 @@ async def run_agent_test(url: str, task_description: str) -> Dict[str, Any]:
             'success': False,
             'error': str(e),
             'last_action': custom_computer.last_action,
-            'last_coordinates': custom_computer.last_coordinates
+            'last_coordinates': custom_computer.last_coordinates,
+            'reasoning_steps': reasoning_steps if 'reasoning_steps' in locals() else [],
+            'action_steps': action_steps if 'action_steps' in locals() else []
         }
         
         if final_url:

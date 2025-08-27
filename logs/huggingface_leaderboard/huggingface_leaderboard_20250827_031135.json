@@ -1,0 +1,195 @@
+{
+  "test_name": "huggingface_leaderboard",
+  "timestamp": "2025-08-27T03:11:35.556287",
+  "results": {
+    "overall_passed": false,
+    "first_agent_test": {
+      "test_name": "first_agent_test",
+      "screenshot_type": "leaderboard",
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_01U7bCJrHAVT7XzUmZUKn8es",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          438,
+          1218
+        ],
+        "typed_text": "",
+        "typing_count": 0,
+        "reasoning_steps": [],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "move",
+            "action_details": {
+              "type": "move",
+              "x": 215,
+              "y": 611
+            },
+            "timestamp": null
+          },
+          {
+            "step": 3,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 0,
+              "y": 0
+            },
+            "timestamp": null
+          }
+        ]
+      },
+      "evaluation": {
+        "passed": false,
+        "reason": "Click at (438, 1218) outside Qwen2.5 bounding box",
+        "expected": "Click on Qwen2.5 bounding box",
+        "actual": "Click at (438, 1218)",
+        "coordinates": [
+          438,
+          1218
+        ],
+        "qwen25_bbox": {
+          "x": 254,
+          "y": 1057,
+          "width": 479,
+          "height": 52
+        }
+      },
+      "passed": false
+    },
+    "second_agent_test": {
+      "test_name": "second_agent_test",
+      "screenshot_type": "leaderboard",
+      "stage": 1,
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_01Jjoi64iunYhz2hu7knxjwS",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          1020,
+          544
+        ],
+        "typed_text": "",
+        "typing_count": 0,
+        "reasoning_steps": [],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "move",
+            "action_details": {
+              "type": "move",
+              "x": 600,
+              "y": 700
+            },
+            "timestamp": null
+          },
+          {
+            "step": 3,
+            "action_type": "drag",
+            "action_details": {
+              "path": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 0,
+                  "y": 0
+                }
+              ],
+              "type": "drag"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 4,
+            "action_type": "move",
+            "action_details": {
+              "type": "move",
+              "x": 500,
+              "y": 273
+            },
+            "timestamp": null
+          },
+          {
+            "step": 5,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 0,
+              "y": 0
+            },
+            "timestamp": null
+          }
+        ]
+      },
+      "evaluation": {
+        "passed": false,
+        "reason": "Click at (1020, 544) outside Qwen2.5 bounding box",
+        "expected": "Click on Qwen2.5 bounding box",
+        "actual": "Click at (1020, 544)",
+        "coordinates": [
+          1020,
+          544
+        ],
+        "qwen25_bbox": {
+          "x": 254,
+          "y": 1057,
+          "width": 479,
+          "height": 52
+        }
+      },
+      "passed": false,
+      "failure_reason": "Failed to click Qwen2.5 in stage 1"
+    },
+    "summary": {
+      "first_test_passed": false,
+      "second_test_passed": false,
+      "total_tests": 2,
+      "passed_tests": 0
+    }
+  }
+}

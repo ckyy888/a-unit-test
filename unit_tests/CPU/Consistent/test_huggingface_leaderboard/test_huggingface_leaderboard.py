@@ -90,14 +90,18 @@ class HuggingFaceLeaderboardTest:
                 self.is_point_inside_bbox(x, y, MODEL1_BBOX) or
                 self.is_point_inside_bbox(x, y, MODEL2_BBOX))
     
-    def evaluate_first_agent_click(self, coordinates: Tuple[int, int]) -> Dict[str, Any]:
+    def evaluate_first_agent_click(self, coordinates: Tuple[int, int], reasoning_steps: list = None, action_steps: list = None) -> Dict[str, Any]:
         """Evaluate if the first agent clicked on Qwen2.5 bounding box"""
         if coordinates is None:
             return {
                 "passed": False,
                 "reason": "No click action was performed",
                 "expected": "Click on Qwen2.5 bounding box",
-                "actual": "No click detected"
+                "actual": "No click detected",
+                "reasoning_steps": reasoning_steps or [],
+                "action_steps": action_steps or [],
+                "total_reasoning_steps": len(reasoning_steps) if reasoning_steps else 0,
+                "total_action_steps": len(action_steps) if action_steps else 0
             }
         
         x, y = coordinates
@@ -109,17 +113,25 @@ class HuggingFaceLeaderboardTest:
             "expected": "Click on Qwen2.5 bounding box",
             "actual": f"Click at ({x}, {y})",
             "coordinates": coordinates,
-            "qwen25_bbox": QWEN25_BBOX
+            "qwen25_bbox": QWEN25_BBOX,
+            "reasoning_steps": reasoning_steps or [],
+            "action_steps": action_steps or [],
+            "total_reasoning_steps": len(reasoning_steps) if reasoning_steps else 0,
+            "total_action_steps": len(action_steps) if action_steps else 0
         }
     
-    def evaluate_second_agent_click(self, coordinates: Tuple[int, int]) -> Dict[str, Any]:
+    def evaluate_second_agent_click(self, coordinates: Tuple[int, int], reasoning_steps: list = None, action_steps: list = None) -> Dict[str, Any]:
         """Evaluate if the second agent clicked on search or model bounding boxes"""
         if coordinates is None:
             return {
                 "passed": False,
                 "reason": "No click action was performed",
                 "expected": "Click on search box or model bounding boxes",
-                "actual": "No click detected"
+                "actual": "No click detected",
+                "reasoning_steps": reasoning_steps or [],
+                "action_steps": action_steps or [],
+                "total_reasoning_steps": len(reasoning_steps) if reasoning_steps else 0,
+                "total_action_steps": len(action_steps) if action_steps else 0
             }
         
         x, y = coordinates
@@ -143,7 +155,11 @@ class HuggingFaceLeaderboardTest:
             "search_bbox": SEARCH_BBOX,
             "model1_bbox": MODEL1_BBOX,
             "model2_bbox": MODEL2_BBOX,
-            "clicked_box": clicked_box
+            "clicked_box": clicked_box,
+            "reasoning_steps": reasoning_steps or [],
+            "action_steps": action_steps or [],
+            "total_reasoning_steps": len(reasoning_steps) if reasoning_steps else 0,
+            "total_action_steps": len(action_steps) if action_steps else 0
         }
     
     async def run_first_agent_test(self, task_description: str) -> Dict[str, Any]:
@@ -153,8 +169,12 @@ class HuggingFaceLeaderboardTest:
         # Run the agent with leaderboard screenshot
         result = await run_agent_test(self.get_leaderboard_screenshot, task_description)
         
-        # Evaluate the result
-        evaluation = self.evaluate_first_agent_click(result.get('last_coordinates'))
+        # Evaluate the result with reasoning and action steps
+        evaluation = self.evaluate_first_agent_click(
+            result.get('last_coordinates'),
+            result.get('reasoning_steps', []),
+            result.get('action_steps', [])
+        )
         
         return {
             "test_name": "first_agent_test",
@@ -171,7 +191,11 @@ class HuggingFaceLeaderboardTest:
         # Stage 1: Agent must click on Qwen2.5 in leaderboard
         print("  Stage 1: Testing Qwen2.5 click on leaderboard...")
         stage1_result = await run_agent_test(self.get_leaderboard_screenshot, task_description_stage1)
-        stage1_evaluation = self.evaluate_first_agent_click(stage1_result.get('last_coordinates'))
+        stage1_evaluation = self.evaluate_first_agent_click(
+            stage1_result.get('last_coordinates'),
+            stage1_result.get('reasoning_steps', []),
+            stage1_result.get('action_steps', [])
+        )
         
         # If stage 1 fails, the entire test fails
         if not stage1_evaluation["passed"]:
@@ -188,7 +212,11 @@ class HuggingFaceLeaderboardTest:
         # Stage 2: Agent gets deviation.png and must click search/model boxes
         print("  Stage 2: Testing search/model click on deviation page...")
         stage2_result = await run_agent_test(self.get_deviation_screenshot, task_description_stage2)
-        stage2_evaluation = self.evaluate_second_agent_click(stage2_result.get('last_coordinates'))
+        stage2_evaluation = self.evaluate_second_agent_click(
+            stage2_result.get('last_coordinates'),
+            stage2_result.get('reasoning_steps', []),
+            stage2_result.get('action_steps', [])
+        )
         
         # Overall success requires both stages to pass
         overall_passed = stage1_evaluation["passed"] and stage2_evaluation["passed"]

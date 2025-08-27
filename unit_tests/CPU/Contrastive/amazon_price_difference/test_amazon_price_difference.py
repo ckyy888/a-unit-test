@@ -12,8 +12,11 @@ from typing import Any, Dict, Optional
 
 load_dotenv()
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../../..'))
 from cua_test_runner import run_agent_test
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
+from test_logger import TestLogger, get_test_name_from_file
 
 ADD_TO_CART_BBOX = {
     "x": 2452,
@@ -68,14 +71,18 @@ class AmazonPriceDifferenceTest:
         return (self.is_point_inside_bbox(x, y, ADD_TO_CART_BBOX) or 
                 self.is_point_inside_bbox(x, y, BUY_NOW_BBOX))
     
-    def evaluate_click_inside_target(self, coordinates: Tuple[int, int]) -> Dict[str, Any]:
+    def evaluate_click_inside_target(self, coordinates: Tuple[int, int], reasoning_steps: list = None, action_steps: list = None) -> Dict[str, Any]:
         """Evaluate if the click is inside the target buttons (for small screenshot test)"""
         if coordinates is None:
             return {
                 "passed": False,
                 "reason": "No click action was performed",
                 "expected": "Click inside Add to Cart or Buy Now buttons",
-                "actual": "No click detected"
+                "actual": "No click detected",
+                "reasoning_steps": reasoning_steps or [],
+                "action_steps": action_steps or [],
+                "total_reasoning_steps": len(reasoning_steps) if reasoning_steps else 0,
+                "total_action_steps": len(action_steps) if action_steps else 0
             }
         
         x, y = coordinates
@@ -88,17 +95,25 @@ class AmazonPriceDifferenceTest:
             "actual": f"Click at ({x}, {y})",
             "coordinates": coordinates,
             "add_to_cart_bbox": ADD_TO_CART_BBOX,
-            "buy_now_bbox": BUY_NOW_BBOX
+            "buy_now_bbox": BUY_NOW_BBOX,
+            "reasoning_steps": reasoning_steps or [],
+            "action_steps": action_steps or [],
+            "total_reasoning_steps": len(reasoning_steps) if reasoning_steps else 0,
+            "total_action_steps": len(action_steps) if action_steps else 0
         }
     
-    def evaluate_click_outside_target(self, coordinates: Tuple[int, int]) -> Dict[str, Any]:
+    def evaluate_click_outside_target(self, coordinates: Tuple[int, int], reasoning_steps: list = None, action_steps: list = None) -> Dict[str, Any]:
         """Evaluate if the click is outside the target buttons (for big screenshot test)"""
         if coordinates is None:
             return {
                 "passed": True,  # No click is acceptable for this test
                 "reason": "No click action was performed (acceptable for this test)",
                 "expected": "Click outside Add to Cart or Buy Now buttons, or no click",
-                "actual": "No click detected"
+                "actual": "No click detected",
+                "reasoning_steps": reasoning_steps or [],
+                "action_steps": action_steps or [],
+                "total_reasoning_steps": len(reasoning_steps) if reasoning_steps else 0,
+                "total_action_steps": len(action_steps) if action_steps else 0
             }
         
         x, y = coordinates
@@ -111,7 +126,11 @@ class AmazonPriceDifferenceTest:
             "actual": f"Click at ({x}, {y})",
             "coordinates": coordinates,
             "add_to_cart_bbox": ADD_TO_CART_BBOX,
-            "buy_now_bbox": BUY_NOW_BBOX
+            "buy_now_bbox": BUY_NOW_BBOX,
+            "reasoning_steps": reasoning_steps or [],
+            "action_steps": action_steps or [],
+            "total_reasoning_steps": len(reasoning_steps) if reasoning_steps else 0,
+            "total_action_steps": len(action_steps) if action_steps else 0
         }
     
     async def run_small_screenshot_test(self, task_description: str) -> Dict[str, Any]:
@@ -121,8 +140,12 @@ class AmazonPriceDifferenceTest:
         # Run the agent with small screenshot
         result = await run_agent_test(self.get_small_screenshot, task_description)
         
-        # Evaluate the result
-        evaluation = self.evaluate_click_inside_target(result.get('last_coordinates'))
+        # Evaluate the result with reasoning and action steps
+        evaluation = self.evaluate_click_inside_target(
+            result.get('last_coordinates'),
+            result.get('reasoning_steps', []),
+            result.get('action_steps', [])
+        )
         
         return {
             "test_name": "small_screenshot_test",
@@ -139,8 +162,12 @@ class AmazonPriceDifferenceTest:
         # Run the agent with big screenshot
         result = await run_agent_test(self.get_big_screenshot, task_description)
         
-        # Evaluate the result
-        evaluation = self.evaluate_click_outside_target(result.get('last_coordinates'))
+        # Evaluate the result with reasoning and action steps
+        evaluation = self.evaluate_click_outside_target(
+            result.get('last_coordinates'),
+            result.get('reasoning_steps', []),
+            result.get('action_steps', [])
+        )
         
         return {
             "test_name": "big_screenshot_test", 
@@ -262,19 +289,14 @@ async def test_amazon_price_difference():
     test_runner = AmazonPriceDifferenceTest()
     results = await test_runner.run_both_tests(task_description)
     
-    # Print detailed results
-    print("\n" + "="*50)
-    print("AMAZON PRICE DIFFERENCE TEST RESULTS")
-    print("="*50)
+    # Initialize logger and log results to JSON
+    logger = TestLogger("amazon_price_difference")
     
+    # Still generate visualizations but don't print detailed results
     for test_name, test_result in [("Small Screenshot", results["small_screenshot_test"]), 
                                    ("Big Screenshot", results["big_screenshot_test"])]:
-        print(f"\n{test_name} Test:")
-        print(f"  Status: {'PASSED' if test_result['passed'] else 'FAILED'}")
-        print(f"  Reason: {test_result['evaluation']['reason']}")
         if test_result['agent_result'].get('last_coordinates'):
             x, y = test_result['agent_result']['last_coordinates']
-            print(f"  Click coordinates: ({x}, {y})")
             
             # Use the appropriate screenshot based on test type
             screenshot_type = test_result['screenshot_type']
@@ -295,8 +317,8 @@ async def test_amazon_price_difference():
                 is_in_bbox=test_result['evaluation']['passed']
             )
     
-    print(f"\nOverall Result: {'PASSED' if results['overall_passed'] else 'FAILED'}")
-    print(f"Tests passed: {results['summary']['passed_tests']}/{results['summary']['total_tests']}")
+    # Log results to JSON file and print summary
+    logger.log_and_print_summary(results)
     
     # Return results instead of using assert
     return results

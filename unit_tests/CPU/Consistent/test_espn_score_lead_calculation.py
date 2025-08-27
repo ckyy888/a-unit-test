@@ -8,8 +8,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 from cua_test_runner_v2 import run_agent_test  # type: ignore
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from test_logger import TestLogger, get_test_name_from_file
 
 
@@ -25,15 +26,19 @@ class ESPNScoreLeadCalculationTest:
 
     def extract_agent_final_output(self, agent_result: Dict[str, Any]) -> str:
         """Extract the agent's final text output/reasoning from the result."""
-        result = agent_result.get("result", {})
-        if not result or "output" not in result:
+        # Check reasoning_steps for the agent's text output
+        reasoning_steps = agent_result.get("reasoning_steps", [])
+        if not reasoning_steps:
             return ""
         
-        # Get the last reasoning output
+        # Get the last reasoning step that contains text output
         final_reasoning = ""
-        for item in result["output"]:
-            if item.get("type") == "reasoning":
-                final_reasoning = item.get("output_text", "")
+        for step in reasoning_steps:
+            reasoning = step.get("reasoning", {})
+            content = reasoning.get("content", [])
+            for item in content:
+                if item.get("type") == "output_text":
+                    final_reasoning = item.get("text", "")
         
         return final_reasoning
 

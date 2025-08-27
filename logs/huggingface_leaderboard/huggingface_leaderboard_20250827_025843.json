@@ -1,0 +1,103 @@
+{
+  "test_name": "huggingface_leaderboard",
+  "timestamp": "2025-08-27T02:58:43.217960",
+  "results": {
+    "overall_passed": false,
+    "first_agent_test": {
+      "test_name": "first_agent_test",
+      "screenshot_type": "leaderboard",
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_01FhP7gZjR5ZJPwdwcqQcf1Q",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          726,
+          544
+        ],
+        "typed_text": "",
+        "typing_count": 0
+      },
+      "evaluation": {
+        "passed": false,
+        "reason": "Click at (726, 544) outside Qwen2.5 bounding box",
+        "expected": "Click on Qwen2.5 bounding box",
+        "actual": "Click at (726, 544)",
+        "coordinates": [
+          726,
+          544
+        ],
+        "qwen25_bbox": {
+          "x": 254,
+          "y": 1057,
+          "width": 479,
+          "height": 52
+        }
+      },
+      "passed": false
+    },
+    "second_agent_test": {
+      "test_name": "second_agent_test",
+      "screenshot_type": "leaderboard",
+      "stage": 1,
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_013DQ6ym47GzPrzRAFpEH4xa",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          714,
+          544
+        ],
+        "typed_text": "",
+        "typing_count": 0
+      },
+      "evaluation": {
+        "passed": false,
+        "reason": "Click at (714, 544) outside Qwen2.5 bounding box",
+        "expected": "Click on Qwen2.5 bounding box",
+        "actual": "Click at (714, 544)",
+        "coordinates": [
+          714,
+          544
+        ],
+        "qwen25_bbox": {
+          "x": 254,
+          "y": 1057,
+          "width": 479,
+          "height": 52
+        }
+      },
+      "passed": false,
+      "failure_reason": "Failed to click Qwen2.5 in stage 1"
+    },
+    "summary": {
+      "first_test_passed": false,
+      "second_test_passed": false,
+      "total_tests": 2,
+      "passed_tests": 0
+    }
+  }
+}

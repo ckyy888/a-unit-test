@@ -1,0 +1,343 @@
+{
+  "test_name": "amazon_size_colour",
+  "timestamp": "2025-08-27T12:21:58.349236",
+  "results": {
+    "overall_passed": true,
+    "size_screenshot_test": {
+      "test_name": "size_screenshot_test",
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_019dosLSB3YVfVRicjhGgTA4",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          2762,
+          945
+        ],
+        "typed_text": "",
+        "typing_count": 0,
+        "reasoning_steps": [
+          {
+            "step": 1,
+            "reasoning": {
+              "id": "76c3cb6e-3397-45d8-a198-4739062f41a3",
+              "content": [
+                {
+                  "text": "I'll help you purchase a desk mat that is 36\" x 17\". Let me start by taking a screenshot to see what's currently on the Amazon product page.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "reasoning": {
+              "id": "f9ca811d-2706-43dc-9fc0-f7e3c3e2c014",
+              "content": [
+                {
+                  "text": "Perfect! I can see the Amazon product page for an Aothia Leather Desk Pad Protector. Let me examine the key details:\n\n1. **Product Name**: Aothia Leather Desk Pad Protector, Mouse Pad, Office Desk Mat, Non-Slip PU Leather Desk Blotter, Laptop Desk Pad, Waterproof Desk Writing Pad for Office and Home (36\" x 17\", Light Blue)\n\n2. **Size**: I can see that the size options are shown, and \"36\" x 17\"\" is already selected (highlighted in blue), which exactly matches the user's requirements of 36\" x 17\".\n\n3. **Purchase options**: I can see both the yellow \"Add to Cart\" button and the orange \"Buy Now\" button are available.\n\nSince this desk mat matches the user's exact requirements (36\" x 17\"), I'll proceed to purchase it by clicking the \"Add to Cart\" button as requested.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          }
+        ],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 1353,
+              "y": 474
+            },
+            "timestamp": null
+          }
+        ]
+      },
+      "evaluation": {
+        "passed": true,
+        "reason": "Click at (2762, 945) inside target buttons",
+        "expected": "Click inside Add to Cart or Buy Now buttons",
+        "actual": "Click at (2762, 945)",
+        "coordinates": [
+          2762,
+          945
+        ],
+        "add_to_cart_bbox": {
+          "x": 2452,
+          "y": 940,
+          "width": 416,
+          "height": 63
+        },
+        "buy_now_bbox": {
+          "x": 2453,
+          "y": 1140,
+          "width": 416,
+          "height": 63
+        },
+        "reasoning_steps": [
+          {
+            "step": 1,
+            "reasoning": {
+              "id": "76c3cb6e-3397-45d8-a198-4739062f41a3",
+              "content": [
+                {
+                  "text": "I'll help you purchase a desk mat that is 36\" x 17\". Let me start by taking a screenshot to see what's currently on the Amazon product page.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "reasoning": {
+              "id": "f9ca811d-2706-43dc-9fc0-f7e3c3e2c014",
+              "content": [
+                {
+                  "text": "Perfect! I can see the Amazon product page for an Aothia Leather Desk Pad Protector. Let me examine the key details:\n\n1. **Product Name**: Aothia Leather Desk Pad Protector, Mouse Pad, Office Desk Mat, Non-Slip PU Leather Desk Blotter, Laptop Desk Pad, Waterproof Desk Writing Pad for Office and Home (36\" x 17\", Light Blue)\n\n2. **Size**: I can see that the size options are shown, and \"36\" x 17\"\" is already selected (highlighted in blue), which exactly matches the user's requirements of 36\" x 17\".\n\n3. **Purchase options**: I can see both the yellow \"Add to Cart\" button and the orange \"Buy Now\" button are available.\n\nSince this desk mat matches the user's exact requirements (36\" x 17\"), I'll proceed to purchase it by clicking the \"Add to Cart\" button as requested.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          }
+        ],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 1353,
+              "y": 474
+            },
+            "timestamp": null
+          }
+        ],
+        "total_reasoning_steps": 2,
+        "total_action_steps": 2
+      },
+      "passed": true
+    },
+    "colour_screenshot_test": {
+      "test_name": "colour_screenshot_test",
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_01GPLHZMLctbsCWvvEe93g6t",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          2762,
+          945
+        ],
+        "typed_text": "",
+        "typing_count": 0,
+        "reasoning_steps": [
+          {
+            "step": 1,
+            "reasoning": {
+              "id": "b8fe89cd-d237-426b-be67-8b79af28cbc4",
+              "content": [
+                {
+                  "text": "I'll help you purchase a light blue desk mat on Amazon. Let me start by taking a screenshot to see the current product page.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "reasoning": {
+              "id": "042e3d10-f910-4215-aa02-c1d9132297cb",
+              "content": [
+                {
+                  "text": "Perfect! I can see this is an Amazon product page for an \"Aothia Leather Desk Pad Protector, Mouse Pad, Office Desk Mat\" in Light Blue. Looking at the product details, I can confirm:\n\n1. This is a desk mat/pad\n2. The color is specifically listed as \"Light Blue\" in the product title\n3. The selected color option at the bottom shows \"Light Blue\" \n4. The price is $15.99\n5. There are both \"Add to Cart\" (yellow button) and \"Buy Now\" (orange button) options available\n\nThis product matches the user's requirements for a light blue desk mat. I'll click on the yellow \"Add to Cart\" button to purchase it.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          }
+        ],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 1353,
+              "y": 474
+            },
+            "timestamp": null
+          }
+        ]
+      },
+      "evaluation": {
+        "passed": true,
+        "reason": "Click at (2762, 945) inside target buttons",
+        "expected": "Click inside Add to Cart or Buy Now buttons",
+        "actual": "Click at (2762, 945)",
+        "coordinates": [
+          2762,
+          945
+        ],
+        "add_to_cart_bbox": {
+          "x": 2452,
+          "y": 940,
+          "width": 416,
+          "height": 63
+        },
+        "buy_now_bbox": {
+          "x": 2453,
+          "y": 1140,
+          "width": 416,
+          "height": 63
+        },
+        "reasoning_steps": [
+          {
+            "step": 1,
+            "reasoning": {
+              "id": "b8fe89cd-d237-426b-be67-8b79af28cbc4",
+              "content": [
+                {
+                  "text": "I'll help you purchase a light blue desk mat on Amazon. Let me start by taking a screenshot to see the current product page.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "reasoning": {
+              "id": "042e3d10-f910-4215-aa02-c1d9132297cb",
+              "content": [
+                {
+                  "text": "Perfect! I can see this is an Amazon product page for an \"Aothia Leather Desk Pad Protector, Mouse Pad, Office Desk Mat\" in Light Blue. Looking at the product details, I can confirm:\n\n1. This is a desk mat/pad\n2. The color is specifically listed as \"Light Blue\" in the product title\n3. The selected color option at the bottom shows \"Light Blue\" \n4. The price is $15.99\n5. There are both \"Add to Cart\" (yellow button) and \"Buy Now\" (orange button) options available\n\nThis product matches the user's requirements for a light blue desk mat. I'll click on the yellow \"Add to Cart\" button to purchase it.",
+                  "type": "output_text",
+                  "annotations": []
+                }
+              ],
+              "role": "assistant",
+              "status": "completed",
+              "type": "message"
+            },
+            "timestamp": null
+          }
+        ],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 1353,
+              "y": 474
+            },
+            "timestamp": null
+          }
+        ],
+        "total_reasoning_steps": 2,
+        "total_action_steps": 2
+      },
+      "passed": true
+    },
+    "summary": {
+      "size_test_passed": true,
+      "colour_test_passed": true,
+      "total_tests": 2,
+      "passed_tests": 2
+    }
+  }
+}

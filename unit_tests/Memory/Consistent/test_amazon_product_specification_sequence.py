@@ -7,8 +7,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 from cua_test_runner_v2 import run_agent_test  # type: ignore
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+from test_logger import TestLogger, get_test_name_from_file
 
 
 class AmazonProductSpecificationSequenceTest:
@@ -94,25 +97,9 @@ async def test_amazon_product_specification_sequence():
         test_runner.first_task_description, test_runner.second_task_description
     )
 
-    print("\n" + "=" * 50)
-    print("AMAZON PRODUCT SPECIFICATION SEQUENCE TEST RESULTS")
-    print("=" * 50)
-    for test_name, test_result in [
-        ("First Test", results["first_test"]),
-        ("Second Test", results["second_test"]),
-    ]:
-        print(f"\n{test_name}:")
-        print(f"  Status: {'PASSED' if test_result['passed'] else 'FAILED'}")
-        print(f"  Reason: {test_result['evaluation']['reason']}")
-        final_url = test_result["evaluation"].get("actual", "Unknown")
-        print(f"  Final URL: {final_url}")
-
-    print(
-        f"\nOverall Result: {'PASSED' if results['overall_passed'] else 'FAILED'}"
-    )
-    print(
-        f"Tests passed: {results['summary']['passed_tests']}/{results['summary']['total_tests']}"
-    )
+    # Initialize logger and log results to JSON
+    logger = TestLogger("amazon_product_specification_sequence")
+    logger.log_and_print_summary(results)
     return results
 
 

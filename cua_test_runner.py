@@ -139,7 +139,7 @@ async def run_agent_test(screenshot_func, task_description: str) -> Dict[str, An
     # Create agent
     try:
         agent = ComputerAgent(
-            model="claude-3-5-sonnet-20241022",
+            model="claude-sonnet-4-20250514",
             tools=[custom_computer]
         )
     except Exception as e:
@@ -163,6 +163,8 @@ async def run_agent_test(screenshot_func, task_description: str) -> Dict[str, An
         
         # Collect all results from the async generator
         final_result = None
+        reasoning_steps = []  # Collect reasoning at each step
+        action_steps = []  # Collect actions at each step
         async for result in agent.run(messages):
             final_result = result
             # Process any computer calls that might trigger our record_click function
@@ -171,7 +173,22 @@ async def run_agent_test(screenshot_func, task_description: str) -> Dict[str, An
                     if item.get("type") == "computer_call":
                         action = item.get("action", {})
                         action_type = action.get("type", "")
-                        print(f"Computer Action: {action_type}({action})")
+                        action_steps.append({
+                            'step': len(action_steps) + 1,
+                            'action_type': action_type,
+                            'action_details': action,
+                            'timestamp': result.get('timestamp') if 'timestamp' in result else None
+                        })
+                        print(f"Computer Action Step {len(action_steps)}: {action_type}({action})")
+                    elif item.get("type") != "computer_call_output":
+                        # This is reasoning text (same logic as Gmail test)
+                        reasoning_text = item
+                        reasoning_steps.append({
+                            'step': len(reasoning_steps) + 1,
+                            'reasoning': reasoning_text,
+                            'timestamp': result.get('timestamp') if 'timestamp' in result else None
+                        })
+                        print(f"Reasoning Step {len(reasoning_steps)}: {reasoning_text}")
             
             # Check if we should terminate after processing this result
             if tracker.should_terminate:
@@ -180,13 +197,16 @@ async def run_agent_test(screenshot_func, task_description: str) -> Dict[str, An
         
         print(f"Agent completed. Last action: {tracker.last_action}, Last coordinates: {tracker.last_coordinates}")
         print(f"Typed text: '{tracker.typed_text}', Typing count: {tracker.typing_count}")
+        print(f"Captured {len(reasoning_steps)} reasoning steps and {len(action_steps)} action steps")
         return {
             'success': True,
             'result': final_result,
             'last_action': tracker.last_action,
             'last_coordinates': tracker.last_coordinates,
             'typed_text': tracker.typed_text,
-            'typing_count': tracker.typing_count
+            'typing_count': tracker.typing_count,
+            'reasoning_steps': reasoning_steps,
+            'action_steps': action_steps
         }
     except Exception as e:
         print(f"Agent failed with error: {e}")
@@ -198,5 +218,7 @@ async def run_agent_test(screenshot_func, task_description: str) -> Dict[str, An
             'last_action': tracker.last_action,
             'last_coordinates': tracker.last_coordinates,
             'typed_text': tracker.typed_text,
-            'typing_count': tracker.typing_count
+            'typing_count': tracker.typing_count,
+            'reasoning_steps': reasoning_steps if 'reasoning_steps' in locals() else [],
+            'action_steps': action_steps if 'action_steps' in locals() else []
         }

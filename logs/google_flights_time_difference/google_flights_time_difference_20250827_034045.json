@@ -1,0 +1,129 @@
+{
+  "test_name": "google_flights_time_difference",
+  "timestamp": "2025-08-27T03:40:46.210105",
+  "results": {
+    "overall_passed": false,
+    "first_test": {
+      "test_name": "first_test",
+      "scenario": "should_select_flight",
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_014SpgkRuG15fBjd8uFo8STT",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          1235,
+          837
+        ],
+        "reasoning_steps": [],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 605,
+              "y": 420
+            },
+            "timestamp": null
+          }
+        ],
+        "final_url": "chrome-error://chromewebdata/",
+        "screenshot_path": "/Users/charlotteyan/Desktop/unit-test/unit_tests/CPU/Contrastive/screenshots/screenshot_click_3.png"
+      },
+      "evaluation": {
+        "passed": true,
+        "reason": "URL matches success pattern - flight was selected correctly",
+        "expected": "Flight selection (URL should contain 'choose-travelers')",
+        "actual": "Final URL: chrome-error://chromewebdata/",
+        "final_url": "chrome-error://chromewebdata/",
+        "url_matches_success": true
+      },
+      "passed": true
+    },
+    "second_test": {
+      "test_name": "second_test",
+      "scenario": "should_not_select_flight",
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_01X929gR4F2RwV3mAbNfvJ2e",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          1235,
+          835
+        ],
+        "reasoning_steps": [],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 605,
+              "y": 419
+            },
+            "timestamp": null
+          }
+        ],
+        "final_url": "chrome-error://chromewebdata/",
+        "screenshot_path": "/Users/charlotteyan/Desktop/unit-test/unit_tests/CPU/Contrastive/screenshots/screenshot_click_3.png"
+      },
+      "evaluation": {
+        "passed": false,
+        "reason": "URL matches success pattern - flight was incorrectly selected",
+        "expected": "No flight selection (URL should NOT contain 'choose-travelers')",
+        "actual": "Final URL: chrome-error://chromewebdata/",
+        "final_url": "chrome-error://chromewebdata/",
+        "url_matches_success": true
+      },
+      "passed": false
+    },
+    "summary": {
+      "first_test_passed": true,
+      "second_test_passed": false,
+      "total_tests": 2,
+      "passed_tests": 1
+    }
+  }
+}

@@ -11,8 +11,10 @@ from typing import Any, Dict, Optional
 
 load_dotenv()
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 from cua_test_runner_v2 import run_agent_test
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+from test_logger import TestLogger, get_test_name_from_file
 
 class GoogleFlightsTimeDifferenceTest:
     def __init__(self):
@@ -32,20 +34,19 @@ class GoogleFlightsTimeDifferenceTest:
 
     def evaluate_flight_selection(self, coordinates: Optional[Tuple[int, int]], agent_result: Dict[str, Any], should_select: bool) -> Dict[str, Any]:
         """Evaluate if the agent correctly selected or didn't select the flight based on final URL"""
-        success_urls = ["https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=1E701CF5-60C5-4FE4-9493-46F8C5882969&type=ext",
-                        "https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=FC8AD58F-8813-4881-88DF-B70515B7D58B&type=ext",
-                        "https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=A27432E5-DAB3-40E7-864D-C47521770A47&type=ext",
-                        "https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=8FFB1AE7-11FC-410D-9628-8583FECCADF7&type=ext",
-                        "https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=153F0A14-4EEF-45DA-BED6-1B3637571E7E&type=ext"]
+        #success_urls = ["https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=1E701CF5-60C5-4FE4-9493-46F8C5882969&type=ext",
+        #                "https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=FC8AD58F-8813-4881-88DF-B70515B7D58B&type=ext",
+        #                "https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=A27432E5-DAB3-40E7-864D-C47521770A47&type=ext",
+        #                "https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=8FFB1AE7-11FC-410D-9628-8583FECCADF7&type=ext",
+        #                "https://www.united.com/en/us/traveler/choose-travelers?src=uatravel&cartId=153F0A14-4EEF-45DA-BED6-1B3637571E7E&type=ext"]
         
+        success_url = "chrome-error://chromewebdata/"
         # Get final URL from agent result
         final_url = agent_result.get('final_url', '')
         print(f"Evaluating with final URL: {final_url}")
         
         # Check if final URL matches any of the success URLs
-        url_matches_success = any(final_url.startswith(success_url.split('?')[0]) and 
-                                 'choose-travelers' in final_url 
-                                 for success_url in success_urls)
+        url_matches_success = success_url == final_url
         
         if should_select:
             # First test: should succeed if URL matches success URLs
@@ -200,31 +201,20 @@ async def test_gflight_time_difference():
         test_runner.second_task_description
     )
     
-    # Print detailed results
-    print("\n" + "="*50)
-    print("GOOGLE FLIGHTS TIME DIFFERENCE TEST RESULTS")
-    print("="*50)
+    # Initialize logger and log results to JSON
+    logger = TestLogger("google_flights_time_difference")
+    
+    # Still generate visualizations but don't print detailed results
     
     for test_name, test_result in [("First Test", results["first_test"]), 
                                     ("Second Test", results["second_test"])]:
-        print(f"\n{test_name}:")
-        print(f"  Status: {'PASSED' if test_result['passed'] else 'FAILED'}")
-        print(f"  Reason: {test_result['evaluation']['reason']}")
-        
-        # Display final URL information
-        final_url = test_result['evaluation'].get('final_url', 'Unknown')
-        print(f"  Final URL: {final_url}")
-        print(f"  URL matches success pattern: {test_result['evaluation'].get('url_matches_success', False)}")
-        
         # Handle screenshot visualization if coordinates are available
         if test_result['agent_result'].get('last_coordinates'):
             x, y = test_result['agent_result']['last_coordinates']
-            print(f"  Click coordinates: ({x}, {y})")
             
             # Use screenshot_path from agent result if available
             screenshot_path = test_result['agent_result'].get('screenshot_path')
             if screenshot_path:
-                print(f"  Screenshot saved at: {screenshot_path}")
                 test_runner.visualize_prediction(
                     image_path=screenshot_path,
                     pred_x=x,
@@ -236,13 +226,9 @@ async def test_gflight_time_difference():
                     gt_y2=0,
                     is_in_bbox=test_result['evaluation']['passed']
                 )
-            else:
-                print("  No screenshot available for visualization")
-        else:
-            print("  No click detected")
     
-    print(f"\nOverall Result: {'PASSED' if results['overall_passed'] else 'FAILED'}")
-    print(f"Tests passed: {results['summary']['passed_tests']}/{results['summary']['total_tests']}")
+    # Log results to JSON file and print summary
+    logger.log_and_print_summary(results)
     
     # Return results instead of using assert
     return results

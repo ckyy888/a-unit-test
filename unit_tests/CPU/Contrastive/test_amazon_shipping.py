@@ -9,9 +9,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 from cua_test_runner_v2 import run_agent_test  # type: ignore
 from playwright.async_api import async_playwright  # type: ignore
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+from test_logger import TestLogger, get_test_name_from_file
 
 
 class AmazonShippingTest:
@@ -36,120 +39,50 @@ class AmazonShippingTest:
             """
         )
 
-    async def _get_add_to_cart_bbox(self) -> Optional[Dict[str, float]]:
-        """Fetch the absolute bounding box of the add-to-cart button in the same viewport as the agent.
-
-        Returns a dict with keys x, y, width, height in pixels, or None if not found.
-        """
-        # Match the viewport used by PlaywrightComputerHandler (2940x1596)
-        viewport_width, viewport_height = 2940, 1596
-        try:
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(
-                    headless=True,
-                    args=[
-                        "--no-sandbox",
-                        "--disable-setuid-sandbox",
-                        "--disable-dev-shm-usage",
-                        "--disable-blink-features=AutomationControlled",
-                        "--disable-web-security",
-                        "--disable-features=VizDisplayCompositor",
-                    ],
-                )
-                context = await browser.new_context(
-                    viewport={"width": viewport_width, "height": viewport_height},
-                    ignore_https_errors=True,
-                    user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                )
-                page = await context.new_page()
-                await page.goto(self.url, wait_until="domcontentloaded", timeout=30000)
-                await page.wait_for_load_state("networkidle", timeout=30000)
-
-                # CSS selector based on provided element
-                selector = "#add-to-cart-button"
-                await page.wait_for_selector(selector, state="attached", timeout=20000)
-                element = await page.query_selector(selector)
-                if not element:
-                    await context.close()
-                    await browser.close()
-                    return None
-                bbox = await element.bounding_box()
-                await context.close()
-                await browser.close()
-                return bbox  # type: ignore[return-value]
-        except Exception:
-            return None
-
-    def _is_inside(self, x: int, y: int, bbox: Dict[str, float]) -> bool:
-        return (
-            bbox["x"] <= x <= bbox["x"] + bbox["width"]
-            and bbox["y"] <= y <= bbox["y"] + bbox["height"]
-        )
+    def _is_cart_url(self, url: str) -> bool:
+        """Check if the URL indicates the user is on the Amazon cart page."""
+        if not url:
+            return False
+        return url.startswith("https://www.amazon.com/cart")
 
     async def evaluate_should_add_to_cart(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
-        """Evaluate when agent SHOULD click add to cart (first test - free shipping)."""
-        coordinates: Optional[Tuple[int, int]] = agent_result.get("last_coordinates")
-        if not coordinates:
+        """Evaluate when agent SHOULD add to cart (first test - free shipping)."""
+        final_url: Optional[str] = agent_result.get("final_url")
+        if not final_url:
             return {
                 "passed": False,
-                "reason": "No click action was performed",
-                "expected": "Click inside Add to Cart button (free shipping case)",
-                "actual": "No click detected",
+                "reason": "No final URL found in agent result",
+                "expected": "Final URL should start with 'https://www.amazon.com/cart' (free shipping case)",
+                "actual": "No final URL detected",
             }
 
-        bbox = await self._get_add_to_cart_bbox()
-        if not bbox:
-            return {
-                "passed": False,
-                "reason": "Could not locate Add to Cart button by selector",
-                "expected": "Click inside Add to Cart button (free shipping case)",
-                "actual": f"Coordinates: {coordinates}",
-            }
-
-        x, y = coordinates
-        inside = self._is_inside(x, y, bbox)
+        is_cart = self._is_cart_url(final_url)
         return {
-            "passed": inside,
-            "reason": f"Click at ({x}, {y}) {'inside' if inside else 'outside'} Add to Cart button",
-            "expected": "Click inside Add to Cart button (free shipping case)",
-            "actual": f"Click at ({x}, {y})",
-            "coordinates": coordinates,
-            "add_to_cart_bbox": bbox,
+            "passed": is_cart,
+            "reason": f"Final URL {'is' if is_cart else 'is not'} a cart URL",
+            "expected": "Final URL should start with 'https://www.amazon.com/cart' (free shipping case)",
+            "actual": f"Final URL: {final_url}",
+            "final_url": final_url,
         }
 
     async def evaluate_should_not_add_to_cart(self, agent_result: Dict[str, Any]) -> Dict[str, Any]:
-        """Evaluate when agent should NOT click add to cart (second test - no free shipping)."""
-        coordinates: Optional[Tuple[int, int]] = agent_result.get("last_coordinates")
-        
-        # If no click was made, that's correct behavior for this test
-        if not coordinates:
+        """Evaluate when agent should NOT add to cart (second test - no free shipping)."""
+        final_url: Optional[str] = agent_result.get("final_url")
+        if not final_url:
             return {
-                "passed": True,
-                "reason": "No click action was performed (correct - shipping costs exceed budget)",
-                "expected": "No click on Add to Cart button (no free shipping case)",
-                "actual": "No click detected",
+                "passed": False,
+                "reason": "No final URL found in agent result",
+                "expected": "Final URL should NOT start with 'https://www.amazon.com/cart' (no free shipping case)",
+                "actual": "No final URL detected",
             }
 
-        bbox = await self._get_add_to_cart_bbox()
-        if not bbox:
-            # If we can't find the button but there was a click, assume it wasn't on add-to-cart
-            return {
-                "passed": True,
-                "reason": "Could not locate Add to Cart button, but click was made elsewhere",
-                "expected": "No click on Add to Cart button (no free shipping case)",
-                "actual": f"Click at coordinates: {coordinates}",
-                "coordinates": coordinates,
-            }
-
-        x, y = coordinates
-        inside = self._is_inside(x, y, bbox)
+        is_cart = self._is_cart_url(final_url)
         return {
-            "passed": not inside,
-            "reason": f"Click at ({x}, {y}) {'inside' if inside else 'outside'} Add to Cart button",
-            "expected": "No click on Add to Cart button (no free shipping case)",
-            "actual": f"Click at ({x}, {y})",
-            "coordinates": coordinates,
-            "add_to_cart_bbox": bbox,
+            "passed": not is_cart,
+            "reason": f"Final URL {'is' if is_cart else 'is not'} a cart URL",
+            "expected": "Final URL should NOT start with 'https://www.amazon.com/cart' (no free shipping case)",
+            "actual": f"Final URL: {final_url}",
+            "final_url": final_url,
         }
 
     async def run_first_test(self, task_description: str) -> Dict[str, Any]:
@@ -200,25 +133,9 @@ async def test_amazon_shipping():
         test_runner.first_task_description, test_runner.second_task_description
     )
 
-    print("\n" + "=" * 50)
-    print("AMAZON SHIPPING TEST RESULTS")
-    print("=" * 50)
-    for test_name, test_result in [
-        ("First Test", results["first_test"]),
-        ("Second Test", results["second_test"]),
-    ]:
-        print(f"\n{test_name}:")
-        print(f"  Status: {'PASSED' if test_result['passed'] else 'FAILED'}")
-        print(f"  Reason: {test_result['evaluation']['reason']}")
-        final_url = test_result["evaluation"].get("actual", "Unknown")
-        print(f"  Final URL: {final_url}")
-
-    print(
-        f"\nOverall Result: {'PASSED' if results['overall_passed'] else 'FAILED'}"
-    )
-    print(
-        f"Tests passed: {results['summary']['passed_tests']}/{results['summary']['total_tests']}"
-    )
+    # Initialize logger and log results to JSON
+    logger = TestLogger("amazon_shipping")
+    logger.log_and_print_summary(results)
     return results
 
 

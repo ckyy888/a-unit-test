@@ -1,0 +1,157 @@
+{
+  "test_name": "amazon_size_colour",
+  "timestamp": "2025-08-27T12:00:53.856401",
+  "results": {
+    "overall_passed": false,
+    "small_screenshot_test": {
+      "test_name": "small_screenshot_test",
+      "screenshot_type": "small",
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_0114qqjhx8mAzCHxWidcRLNH",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          2762,
+          945
+        ],
+        "typed_text": "",
+        "typing_count": 0,
+        "reasoning_steps": [],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 1353,
+              "y": 474
+            },
+            "timestamp": null
+          }
+        ]
+      },
+      "evaluation": {
+        "passed": false,
+        "reason": "Click at (2762, 945) outside target buttons",
+        "expected": "Click inside Add to Cart or Buy Now buttons",
+        "actual": "Click at (2762, 945)",
+        "coordinates": [
+          2762,
+          945
+        ],
+        "add_to_cart_bbox": {
+          "x": 2452,
+          "y": 650,
+          "width": 416,
+          "height": 63
+        },
+        "buy_now_bbox": {
+          "x": 2453,
+          "y": 730,
+          "width": 416,
+          "height": 63
+        }
+      },
+      "passed": false
+    },
+    "big_screenshot_test": {
+      "test_name": "big_screenshot_test",
+      "screenshot_type": "big",
+      "agent_result": {
+        "success": true,
+        "result": {
+          "output": [
+            {
+              "type": "computer_call_output",
+              "call_id": "toolu_01GSzRhNaCwhA6gDZLBsSzKd",
+              "acknowledged_safety_checks": [],
+              "output": {
+                "type": "input_image"
+              }
+            }
+          ],
+          "usage": "Usage(completion_tokens=0, prompt_tokens=0, total_tokens=0, completion_tokens_details=None, prompt_tokens_details=None)"
+        },
+        "last_action": "click",
+        "last_coordinates": [
+          2762,
+          945
+        ],
+        "typed_text": "",
+        "typing_count": 0,
+        "reasoning_steps": [],
+        "action_steps": [
+          {
+            "step": 1,
+            "action_type": "screenshot",
+            "action_details": {
+              "type": "screenshot"
+            },
+            "timestamp": null
+          },
+          {
+            "step": 2,
+            "action_type": "click",
+            "action_details": {
+              "button": "left",
+              "type": "click",
+              "x": 1353,
+              "y": 474
+            },
+            "timestamp": null
+          }
+        ]
+      },
+      "evaluation": {
+        "passed": true,
+        "reason": "Click at (2762, 945) outside target buttons",
+        "expected": "Click outside Add to Cart or Buy Now buttons",
+        "actual": "Click at (2762, 945)",
+        "coordinates": [
+          2762,
+          945
+        ],
+        "add_to_cart_bbox": {
+          "x": 2452,
+          "y": 650,
+          "width": 416,
+          "height": 63
+        },
+        "buy_now_bbox": {
+          "x": 2453,
+          "y": 730,
+          "width": 416,
+          "height": 63
+        }
+      },
+      "passed": true
+    },
+    "summary": {
+      "small_test_passed": false,
+      "big_test_passed": true,
+      "total_tests": 2,
+      "passed_tests": 1
+    }
+  }
+}
