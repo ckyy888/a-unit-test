@@ -11,36 +11,39 @@ from typing import Any, Dict, Optional
 
 load_dotenv()
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../../..'))
 from cua_test_runner import run_agent_test
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
+from test_logger import TestLogger, get_test_name_from_file
 
 # Dummy coordinates for HuggingFace Leaderboard elements
 QWEN25_BBOX = {
-    "x": 150,
-    "y": 490,
-    "width": 300,
-    "height": 30,
+    "x": 254,
+    "y": 1057,
+    "width": 479,
+    "height": 52,
 }
 
 SEARCH_BBOX = {
-    "x": 350,
-    "y": 273,
-    "width": 100,
-    "height": 25,
+    "x": 688,
+    "y": 19,
+    "width": 511,
+    "height": 48,
 }
 
 MODEL1_BBOX = {
-    "x": 150,
-    "y": 458,
-    "width": 300,
-    "height": 30,
+    "x": 1457,
+    "y": 19,
+    "width": 125,
+    "height": 48,
 }
 
 MODEL2_BBOX = {
-    "x": 150,
-    "y": 489,
-    "width": 300,
-    "height": 30,
+    "x": 862,
+    "y": 1177,
+    "width": 95,
+    "height": 37,
 }
 
 class HuggingFaceLeaderboardTest:
@@ -303,7 +306,7 @@ async def test_huggingface_leaderboard():
     2. Look for the "Qwen2.5-72B-Instruct" model entry in the leaderboard
     3. Click on the "Qwen2.5-72B-Instruct" model name or row
     
-    You have access to computer control functions including screenshot, click, type, scroll, and move.
+    You have access to computer control functions including screenshot, click, type, and move.
     Start by taking a screenshot to see what's on the page.
     """
     
@@ -318,7 +321,7 @@ async def test_huggingface_leaderboard():
     2. Look for the "Qwen2.5-72B-Instruct" model entry in the leaderboard
     3. Click on the "Qwen2.5-72B-Instruct" model name or row to navigate to its page
     
-    You have access to computer control functions including screenshot, click, type, scroll, and move.
+    You have access to computer control functions including screenshot, click, type, and move.
     Start by taking a screenshot to see what's on the page.
     """
     
@@ -337,27 +340,20 @@ async def test_huggingface_leaderboard():
        - The search box if available
        - Any model-related clickable elements
     
-    You have access to computer control functions including screenshot, click, type, scroll, and move.
+    You have access to computer control functions including screenshot, click, type, and move.
     Start by taking a screenshot to see what's on the page.
     """
     
     test_runner = HuggingFaceLeaderboardTest()
     results = await test_runner.run_both_tests(first_task_description, second_task_stage1_description, second_task_stage2_description)
     
-    # Print detailed results
-    print("\n" + "="*50)
-    print("HUGGINGFACE LEADERBOARD TEST RESULTS")
-    print("="*50)
+    # Initialize logger and log results to JSON
+    logger = TestLogger("huggingface_leaderboard")
     
-    # First Agent Test Results
+    # Still generate visualizations but don't print detailed results
     first_test = results["first_agent_test"]
-    print(f"\nFirst Agent Test:")
-    print(f"  Status: {'PASSED' if first_test['passed'] else 'FAILED'}")
-    print(f"  Reason: {first_test['evaluation']['reason']}")
     if first_test['agent_result'].get('last_coordinates'):
         x, y = first_test['agent_result']['last_coordinates']
-        print(f"  Click coordinates: ({x}, {y})")
-        
         test_runner.visualize_prediction(
             image_path=test_runner.leaderboard_screenshot_path,
             pred_x=x,
@@ -373,16 +369,9 @@ async def test_huggingface_leaderboard():
     
     # Second Agent Test Results (Two-Stage)
     second_test = results["second_agent_test"]
-    print(f"\nSecond Agent Test:")
-    print(f"  Status: {'PASSED' if second_test['passed'] else 'FAILED'}")
-    
     if 'stage1_evaluation' in second_test:
-        print(f"  Stage 1 (Qwen2.5 Click): {'PASSED' if second_test['stage1_evaluation']['passed'] else 'FAILED'}")
-        print(f"    Reason: {second_test['stage1_evaluation']['reason']}")
         if second_test['stage1_result'].get('last_coordinates'):
             x1, y1 = second_test['stage1_result']['last_coordinates']
-            print(f"    Click coordinates: ({x1}, {y1})")
-            
             test_runner.visualize_prediction(
                 image_path=test_runner.leaderboard_screenshot_path,
                 pred_x=x1,
@@ -397,12 +386,8 @@ async def test_huggingface_leaderboard():
             )
         
         if 'stage2_evaluation' in second_test:
-            print(f"  Stage 2 (Search/Model Click): {'PASSED' if second_test['stage2_evaluation']['passed'] else 'FAILED'}")
-            print(f"    Reason: {second_test['stage2_evaluation']['reason']}")
             if second_test['stage2_result'].get('last_coordinates'):
                 x2, y2 = second_test['stage2_result']['last_coordinates']
-                print(f"    Click coordinates: ({x2}, {y2})")
-                
                 test_runner.visualize_prediction(
                     image_path=test_runner.deviation_screenshot_path,
                     pred_x=x2,
@@ -417,11 +402,8 @@ async def test_huggingface_leaderboard():
                 )
     else:
         # Handle case where second test failed in stage 1
-        print(f"  Failure Reason: {second_test.get('failure_reason', 'Unknown')}")
         if second_test['agent_result'].get('last_coordinates'):
             x, y = second_test['agent_result']['last_coordinates']
-            print(f"  Click coordinates: ({x}, {y})")
-            
             test_runner.visualize_prediction(
                 image_path=test_runner.leaderboard_screenshot_path,
                 pred_x=x,
@@ -435,8 +417,8 @@ async def test_huggingface_leaderboard():
                 test_name="huggingface_second_agent_failed"
             )
     
-    print(f"\nOverall Result: {'PASSED' if results['overall_passed'] else 'FAILED'}")
-    print(f"Tests passed: {results['summary']['passed_tests']}/{results['summary']['total_tests']}")
+    # Log results to JSON file and print summary
+    logger.log_and_print_summary(results)
     
     # Return results instead of using assert
     return results

@@ -11,9 +11,10 @@ from typing import Any, Dict, Optional
 
 load_dotenv()
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 from cua_test_runner_v2 import run_agent_test
-from playwright.async_api import async_playwright  # type: ignore 
+from playwright.async_api import async_playwright  # type: ignore
+from test_logger import TestLogger, get_test_name_from_file 
 
 class AllRecipesApplePieTest:
     def __init__(self):
@@ -270,23 +271,12 @@ async def test_allrecipes_apple_pie():
         test_runner.second_task_description
     )
     
-    # Print detailed results
-    print("\n" + "="*50)
-    print("ALL RECIPES APPLE PIE TEST RESULTS")
-    print("="*50)
+    # Initialize logger and log results to JSON
+    logger = TestLogger("allrecipes_apple_pie")
     
+    # Still generate visualizations but don't print detailed results
     for test_name, test_result in [("First Test", results["first_test"]), 
                                     ("Second Test", results["second_test"])]:
-        print(f"\n{test_name}:")
-        print(f"  Status: {'PASSED' if test_result['passed'] else 'FAILED'}")
-        print(f"  Reason: {test_result['evaluation']['reason']}")
-        
-        # Display coordinate information
-        coordinates = test_result['evaluation'].get('coordinates', 'Unknown')
-        print(f"  Click coordinates: {coordinates}")
-        save_button_bbox = test_result['evaluation'].get('save_button_bbox', 'Unknown')
-        print(f"  Save button bbox: {save_button_bbox}")
-        
         # Handle screenshot visualization if coordinates are available
         if test_result['agent_result'].get('last_coordinates'):
             x, y = test_result['agent_result']['last_coordinates']
@@ -294,7 +284,6 @@ async def test_allrecipes_apple_pie():
             # Use screenshot_path from agent result if available
             screenshot_path = test_result['agent_result'].get('screenshot_path')
             if screenshot_path:
-                print(f"  Screenshot saved at: {screenshot_path}")
                 test_runner.visualize_prediction(
                     image_path=screenshot_path,
                     pred_x=x,
@@ -306,13 +295,9 @@ async def test_allrecipes_apple_pie():
                     gt_y2=0,
                     is_in_bbox=test_result['evaluation']['passed']
                 )
-            else:
-                print("  No screenshot available for visualization")
-        else:
-            print("  No click detected")
     
-    print(f"\nOverall Result: {'PASSED' if results['overall_passed'] else 'FAILED'}")
-    print(f"Tests passed: {results['summary']['passed_tests']}/{results['summary']['total_tests']}")
+    # Log results to JSON file and print summary
+    logger.log_and_print_summary(results)
     
     # Return results instead of using assert
     return results
